@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "anyaward/session-record-v1",
+  "title": "对局记录 v1",
+  "description": "采集层 → 渲染层的统一契约：一局游戏一份记录，事件按发生顺序写入 events。渲染层 museum_writer.py 只认本契约，不认 Concordia 或任何前端。",
+  "type": "object",
+  "required": ["schema_version", "meta", "events"],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": {"const": 1},
+    "meta": {
+      "type": "object",
+      "required": ["source_module", "award_name", "played_at"],
+      "additionalProperties": true,
+      "properties": {
+        "source_module": {"type": "string", "description": "产生本记录的模块：shared_ordering / discussion / frontend / ..."},
+        "award_name": {"type": "string", "description": "本卷对应的奖项名"},
+        "played_at": {"type": "string", "description": "ISO 8601 时间；其年份决定卷宗归属年度"},
+        "award_doc_no": {"type": ["string", "null"], "description": "公文号；缺省由馆方自动编号为 校奖发〔YYYY〕NNN号"},
+        "school_name": {"type": ["string", "null"], "description": "玩家设置的校名；空则渲染为本校"},
+        "player_name": {"type": ["string", "null"], "description": "玩家称呼；空则渲染为吴主任"},
+        "model": {"type": ["string", "null"], "description": "技术向：LLM 名称"},
+        "prompts_digest": {"type": ["string", "null"], "description": "技术向：prompts 文件的指纹，便于调 prompt 对照"},
+        "session_id": {"type": ["string", "null"], "description": "同一局多模块记录可用相同 session_id 关联"}
+      }
+    },
+    "participants": {
+      "type": "array",
+      "description": "出场角色（委员、校长等）",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {"type": "string"},
+          "post": {"type": "string"}
+        }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "description": "参评对象（学生、提案等）",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "summary": {"type": "string", "description": "一行简介，如 学院 · 专业"},
+          "materials": {"type": ["string", "null"], "description": "报名材料全文；进卷宗附录"}
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "description": "按发生顺序排列的事件",
+      "items": {"$ref": "#/$defs/event"}
+    },
+    "outcome": {
+      "type": "object",
+      "properties": {
+        "final_order": {"type": ["array", "null"], "items": {"type": "string"}, "description": "委员会最终推荐顺序（candidate id）"},
+        "shortlist": {"type": "array", "items": {"type": "string"}, "description": "入围名单（candidate id）"},
+        "winner": {"type": ["string", "null"], "description": "获奖者（candidate id）"}
+      }
+    }
+  },
+  "$defs": {
+    "event": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["speech", "move", "pass", "shortlist", "qa", "decision", "note"],
+          "description": "speech=发言；move=排序移动；pass=弃权；shortlist=入围名单；qa=问答；decision=裁定获奖；note=叙述性补充"
+        },
+        "phase": {
+          "enum": ["meeting", "review", "defense", "ceremony", "aftermath"],
+          "description": "所属幕；缺省按 type 归入对应幕"
+        },
+        "actor": {"type": "string", "description": "speech/move/pass 的行为人"},
+        "text": {"type": "string", "description": "speech/note 的正文"},
+        "item_id": {"type": "string", "description": "move 的对象 id"},
+        "item_name": {"type": "string", "description": "move 的对象名（缺省由渲染层按 id 反查）"},
+        "from_position": {"type": "integer"},
+        "to_position": {"type": "integer"},
+        "reason": {"type": "string", "description": "move/pass 的公开理由"},
+        "round": {"type": "integer"},
+        "turn": {"type": "integer"},
+        "revision": {"type": "integer"},
+        "order_after": {"type": "array", "items": {"type": "string"}},
+        "item_ids": {"type": "array", "items": {"type": "string"}, "description": "shortlist 的名单"},
+        "decided_by": {"type": "string", "description": "shortlist/decision 的决定人，通常为玩家"},
+        "candidate": {"type": "string", "description": "qa 的候选对象 id"},
+        "questioner": {"type": "string", "description": "qa 的提问人"},
+        "question": {"type": "string"},
+        "answer": {"type": "string"},
+        "winner": {"type": "string", "description": "decision 的获奖者 id"},
+        "citation": {"type": "string", "description": "decision 附带的颁奖辞"}
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "format": "anyaward-museum-meta",
+  "version": 1,
+  "volume_no": "002",
+  "doc_no": "校奖发〔2026〕002号",
+  "year": 2026,
+  "volume_dir": "volumes/2026/002-最有科研潜力情侣奖",
+  "school_name": "华清大学",
+  "player_name": "吴主任",
+  "award_name": "最有科研潜力情侣奖",
+  "source_module": "discussion",
+  "session_id": "f5ec9723f85e4e5b90f5e95b7f85aaa8",
+  "played_at": "2026-11-12T09:10:00",
+  "deposited_at": "2026-11-12T09:04:46",
+  "model": null,
+  "prompts_digest": null,
+  "winner_display": "",
+  "counts": {
+    "events": 6,
+    "moves": 0,
+    "passes": 0
+  }
+}

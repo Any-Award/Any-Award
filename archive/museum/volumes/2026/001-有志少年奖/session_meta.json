@@ -1,0 +1,23 @@
+{
+  "format": "anyaward-museum-meta",
+  "version": 1,
+  "volume_no": "001",
+  "doc_no": "校奖发〔2026〕001号",
+  "year": 2026,
+  "volume_dir": "volumes/2026/001-有志少年奖",
+  "school_name": "华清大学",
+  "player_name": "吴主任",
+  "award_name": "有志少年奖",
+  "source_module": "shared_ordering",
+  "session_id": "626b320e1193450f96386c6ebb29bc63",
+  "played_at": "2026-11-12T09:52:28",
+  "deposited_at": "2026-11-12T09:53:11",
+  "model": "deepseek-chat",
+  "prompts_digest": "bc119f3b517a",
+  "winner_display": "",
+  "counts": {
+    "events": 10,
+    "moves": 8,
+    "passes": 2
+  }
+}

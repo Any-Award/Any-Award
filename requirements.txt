@@ -1,0 +1,5 @@
+# 论坛 / 新闻生成器所需依赖（校史馆与启动脚本只用标准库）
+# 用法：python -m venv .venv  然后  .venv/bin/pip install -r requirements.txt
+#       （Windows：.venv\Scripts\pip install -r requirements.txt）
+openai>=1.0
+python-dotenv>=1.0

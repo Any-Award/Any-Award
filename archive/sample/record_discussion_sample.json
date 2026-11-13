@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "meta": {
+    "source_module": "discussion",
+    "award_name": "最有科研潜力情侣奖",
+    "played_at": "2026-11-12T09:10:00",
+    "school_name": "华清大学",
+    "player_name": "吴主任"
+  },
+  "participants": [
+    {
+      "name": "赵副主任",
+      "post": "委员会副主任"
+    },
+    {
+      "name": "钱教授",
+      "post": "科研负责人"
+    },
+    {
+      "name": "孙处长",
+      "post": "学生事务负责人"
+    },
+    {
+      "name": "李部长",
+      "post": "宣传部负责人"
+    },
+    {
+      "name": "周处长",
+      "post": "财务与程序负责人"
+    }
+  ],
+  "candidates": [],
+  "events": [
+    {
+      "type": "speech",
+      "phase": "meeting",
+      "actor": "赵副主任",
+      "text": "校长在开学典礼上宣布设立本奖，情势既定，办法须由我们落定。何谓“科研潜力”，何谓“情侣”，须逐一勘定，方能形成制度。"
+    },
+    {
+      "type": "speech",
+      "phase": "meeting",
+      "actor": "钱教授",
+      "text": "Research potential要可操作。我的意见：两人合并的论文、项目与会议产出，都要能按methodology核对。不能因为陈述感人，就当作有potential。"
+    },
+    {
+      "type": "speech",
+      "phase": "meeting",
+      "actor": "李部长",
+      "text": "标题我都想好了——《当爱情遇上SCI》！家人们，这个故事不用润色，它自己会跑！"
+    },
+    {
+      "type": "speech",
+      "phase": "meeting",
+      "actor": "孙处长",
+      "text": "孩子们的感情是私事。评奖可以，但请不要让落选的情侣觉得自己的感情被打了个分数。"
+    },
+    {
+      "type": "speech",
+      "phase": "meeting",
+      "actor": "周处长",
+      "text": "奖品与经费来源须先落定，责任要讲得清。我讲清楚了吗？"
+    },
+    {
+      "type": "note",
+      "phase": "meeting",
+      "text": "会议就“两人一组报名、双人一同答辩”达成初步共识；“科研潜力”的量化口径与奖品经费来源未决，留待下次会议。"
+    }
+  ],
+  "outcome": {
+    "final_order": null,
+    "shortlist": [],
+    "winner": null
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "anyaward/forum-v1",
+  "title": "校园论坛系统契约 v1",
+  "description": "forum/ 是独立程序，不依赖校史馆或后端。调用方把素材转成『事件简报』（input pack）喂给生成器，产出『论坛快照』（snapshot）。本文件同时定义两种结构。",
+  "$defs": {
+    "pack": {
+      "title": "事件简报（输入契约）",
+      "type": "object",
+      "required": ["schema_version", "title", "public_text"],
+      "additionalProperties": true,
+      "properties": {
+        "schema_version": {"const": 1},
+        "title": {"type": "string", "description": "论坛话题名，如「有志少年奖评选结果公布」"},
+        "public_text": {"type": "string", "description": "学生可见的全部公开信息，纯文本；生成的事实依据只准来自这里"},
+        "hints": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "threads": {"type": "integer", "description": "主题帖数量"},
+            "source": {"type": "string", "description": "素材来源标记，如 museum_volume / backend_event"},
+            "volume": {"type": "string"}
+          }
+        }
+      }
+    },
+    "snapshot": {
+      "title": "论坛快照（输出契约）",
+      "type": "object",
+      "required": ["schema_version", "type", "meta", "threads"],
+      "properties": {
+        "schema_version": {"const": 1},
+        "type": {"const": "forum_snapshot"},
+        "meta": {
+          "type": "object",
+          "properties": {
+            "title": {"type": "string"},
+            "source": {"type": "string"},
+            "source_detail": {"type": "string"},
+            "generated_at": {"type": "string"},
+            "model": {"type": "string"},
+            "personas_file": {"type": "string"}
+          }
+        },
+        "announcement": {
+          "type": ["object", "null"],
+          "properties": {"title": {"type": "string"}, "body": {"type": "string"}}
+        },
+        "threads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["nickname", "title", "body"],
+            "properties": {
+              "nickname": {"type": "string"},
+              "tag": {"type": "string", "description": "调试期人设标签；玩家视图隐藏"},
+              "title": {"type": "string"},
+              "body": {"type": "string"},
+              "comments": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["nickname", "body"],
+                  "properties": {
+                    "nickname": {"type": "string"},
+                    "tag": {"type": "string"},
+                    "body": {"type": "string"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "format": "anyaward-museum-meta",
+  "version": 1,
+  "volume_no": "003",
+  "doc_no": "校奖发〔2026〕003号",
+  "year": 2026,
+  "volume_dir": "volumes/2026/003-有志少年奖",
+  "school_name": "本校",
+  "player_name": "测试组长",
+  "award_name": "有志少年奖",
+  "source_module": "frontend",
+  "session_id": "10b124bbad054605b83a8acea4176eab",
+  "played_at": "2026-11-12T15:20:00",
+  "deposited_at": "2026-11-12T09:18:20",
+  "model": null,
+  "prompts_digest": null,
+  "winner_display": "周乐言",
+  "counts": {
+    "events": 13,
+    "moves": 0,
+    "passes": 0
+  }
+}

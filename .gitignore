@@ -1,0 +1,21 @@
+# 依赖与构建缓存
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# 密钥（绝不提交）
+.env
+*.env
+!.env.example
+
+# 运行时中转区与备份
+archive/inbox/
+forum/data/backup-*/
+forum/data/*.tmp
+*.log
+
+# 操作系统
+.DS_Store
+Thumbs.db

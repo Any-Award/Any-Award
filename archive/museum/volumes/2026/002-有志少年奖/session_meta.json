@@ -1,0 +1,23 @@
+{
+  "format": "anyaward-museum-meta",
+  "version": 1,
+  "volume_no": "002",
+  "doc_no": "校奖发〔2026〕002号",
+  "year": 2026,
+  "volume_dir": "volumes/2026/002-有志少年奖",
+  "school_name": "本校",
+  "player_name": "吴主任",
+  "award_name": "有志少年奖",
+  "source_module": "frontend",
+  "session_id": "6c4c21acc4e2453aad1a09129dfa432f",
+  "played_at": "2026-11-12T15:12:04.530Z",
+  "deposited_at": "2026-11-12T10:12:28",
+  "model": null,
+  "prompts_digest": null,
+  "winner_display": "顾清和",
+  "counts": {
+    "events": 13,
+    "moves": 0,
+    "passes": 0
+  }
+}
