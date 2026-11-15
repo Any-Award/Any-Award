@@ -53,23 +53,6 @@ def load_llm_env() -> dict:
     return env
 
 
-def persona_card(p: dict) -> str:
-    lines = [
-        f"- 昵称：{p['nickname']}（{p['tag']}）",
-        f"  身份：{p['personality']}",
-        f"  语气与口癖：{p['style']}",
-        f"  表达缺陷（要体现）：{p.get('flaw', '')}",
-        f"  边界：{p['boundary']}",
-        f"  出没场景：{p['scene']}",
-        f"  关系：{p['relations']}",
-    ]
-    examples = p.get("examples") or []
-    if examples:
-        lines.append("  说话样板（照这个腔调和长短来，别照抄内容，学它的随意和碎）：")
-        lines += [f"    · {e}" for e in examples]
-    return "\n".join(lines)
-
-
 def humanize_block() -> str:
     return "\n".join([
         "【去AI味·硬清单（命中即失败，全文搜索必须为0）】",
@@ -105,10 +88,40 @@ def post_block(include_reply_example: bool = True) -> str:
         "【单角色口吻】每条只以对应昵称的口吻写，串味（像别的角色或像 AI 客服）即失败。\n"
         "【禁修辞弧】不要『个人经历→感悟升华→安慰/号召』的闭环，不要结尾给人生道理或安慰号召；话可以说一半、没结论、跑题。\n"
         "【禁金句】不要工整对仗的格言警句（如『匿名本来让人敢说，可也让人敢伤人』这种）。\n"
-        "【口头禅是稀有品】你的标志句（如蚌/哥/先夸一句/没数我不说）十条里最多冒一两次，绝大多数时候就是普通说话；一条里堆好几个标志句=严重 AI 味。标志句不是你的身份。\n"
+        "【口头禅是稀有品】标志句十条里最多冒一两次，绝大多数时候你就是普通说话；一条里堆好几个标志句=严重 AI 味。标志句不是你的身份。\n"
         "【接话不接词】回应别人时接他的意思，别复读他或楼主的原词；从你自己的经历和立场出发说。"
     )
     return base + "\n" + extra
+
+
+def persona_system(persona: dict, rules: list[str]) -> str:
+    """单角色 system 提示：身份 + 动态状态/倒计时 + 语气 + 抽样样板 + 全局规则。
+
+    评论/主题帖/日常帖三条路径共用（HANDOFF 缺陷2 的根治点：以前只有评论注入
+    状态与倒计时，帖子批量生成不注入 → 同一角色帖子说"七十来天"、评论说"三十来天"）。
+    标志句不在此提示里显式出现（style 已迁移到 catchphrase 字段），只经说话样板
+    以约 1/6 的占比被随机抽到——结构上保证稀有，不靠指令压。"""
+    import random
+    examples = persona.get("examples") or []
+    sample = random.sample(examples, min(4, len(examples))) if examples else []
+    ex = "\n".join(f"  · {e}" for e in sample)
+    state = memory.get_state(persona["nickname"]) or {}
+    state_lines = ""
+    if state.get("currently"):
+        cur = str(state["currently"]).rstrip("。！？~")
+        state_lines += f"（背景心情：你最近{cur}。这只是底色，不是每条都要提，别硬拐到它。）\n"
+    cd = _countdown(persona)
+    if cd:
+        state_lines += cd + "\n"
+    if state.get("insight"):
+        state_lines += f"（你最近想明白的事：{state['insight']}，相关时才用）\n"
+    return (
+        f"你就是{persona['nickname']}（{persona['tag']}）。{persona['personality']}\n"
+        + (state_lines + "\n" if state_lines else "")
+        + f"语气：{persona['style']}\n"
+        + f"说话样板（学腔调，别照抄）：\n{ex}\n\n"
+        + "全体规则：\n" + rules_block(rules)
+    )
 
 
 def _is_night_owl(p: dict) -> bool:
@@ -192,6 +205,25 @@ _REPLY_MOTIVES = [
     "你帮他补充一个他没说的点",
 ]
 
+# 开主题帖的动机（帖子侧微情境；评论侧见 _MOTIVES/_REPLY_MOTIVES）
+_THREAD_MOTIVES = [
+    "你对这事有话要说，忍不住开一帖",
+    "你想吐槽其中一点，专门发帖说一下",
+    "你想问问大家怎么看，顺带说说自己的情况",
+    "你注意到一个别人可能没注意的点，想指出来",
+    "这事跟你有切身关系，你有点上头",
+    "你只是想凑个热闹，水一帖",
+]
+
+# 无事件时的日常水帖动机
+_DAILY_MOTIVES = [
+    "你正好碰上点日常小事，想说说",
+    "你无聊刷论坛，想找人说两句",
+    "你有个小问题想问问大家",
+    "你今天状态有点特别，想记一笔",
+    "你想接着论坛里最近的气氛聊两句",
+]
+
 
 def comment_situation(thread: dict, prior_comments: list) -> tuple:
     """构造"你刚看到的"微情境：本帖 + 已生成评论（供楼中楼）+ 随机动机。"""
@@ -221,26 +253,9 @@ def generate_one_comment(client, model, persona, rules, situation, motive, mem_b
     映射斯坦福 v2 一次一句 + 情境模板 + 信息不对称。"""
     if budget is None:
         budget = _length_budget()
-    examples = persona.get("examples") or []
-    import random
-    sample = random.sample(examples, min(4, len(examples))) if examples else []
-    ex = "\n".join(f"  · {e}" for e in sample)
-    state = memory.get_state(persona["nickname"]) or {}
-    state_lines = ""
-    if state.get("currently"):
-        state_lines += f"（背景心情：你最近{state['currently']}。这只是底色，不是每条都要提，别硬拐到它。）\n"
-    cd = _countdown(persona)
-    if cd:
-        state_lines += cd + "\n"
-    if state.get("insight"):
-        state_lines += f"（你最近想明白的事：{state['insight']}，相关时才用）\n"
     system = (
-        f"你就是{persona['nickname']}（{persona['tag']}）。{persona['personality']}\n"
-        + (state_lines + "\n" if state_lines else "")
-        + f"语气：{persona['style']}\n"
-        f"说话样板（学腔调，别照抄）：\n{ex}\n"
-        f"你在刷校园论坛，随手评论。不是写作文，不是表演角色。\n\n"
-        "全体规则：\n" + rules_block(rules)
+        persona_system(persona, rules)
+        + "\n你在刷校园论坛，随手评论。不是写作文，不是表演角色。\n"
     )
     user = (
         f"【你刚看到的】{situation}\n\n"
@@ -336,32 +351,75 @@ def chat(client: OpenAI, model: str, system: str, user: str, temperature: float,
     raise AssertionError("unreachable")
 
 
-def generate_threads(client, model, personas, rules, title, public_text, n_threads, temperature) -> dict:
-    posters = eligible_posters(personas, n_threads)
-    system = (
-        "你是校园论坛的学生扮演系统。你根据给定的公开信息和一批学生人设，"
-        "以不同学生的口吻撰写论坛帖子。输出严格遵守用户要求的 JSON 格式。\n\n"
-        "全体规则：\n" + rules_block(rules)
-    )
-    cards = "\n".join(persona_card(p) for p in posters)
-    footprints_block = memory.footprints([p["nickname"] for p in posters])
-    hot = memory.hot_topics()
+_ANNOUNCE_SYSTEM = (
+    "你是校园论坛的值班管理员。根据给定的公开信息写一条置顶公告："
+    "只转述公开信息里的事实，语气官方、克制、简短，不加评论、不玩梗。"
+)
+
+
+def generate_announcement(client, model, title, public_text, temperature) -> dict:
+    """公告独立一次调用。管理员是机构口吻，不套学生人设，也不套去AI味清单
+    （公文本就是书面腔，套了反而怪）。"""
     user = (
-        f"学生人设（本次发帖人，共 {len(posters)} 人）：\n{cards}\n\n"
-        + (f"{footprints_block}\n\n" if footprints_block else "")
-        + (f"{hot}\n\n" if hot else "")
-        + f"话题：{title}\n\n"
+        f"话题：{title}\n\n"
         f"公开信息（你的全部事实来源）：\n---\n{public_text}\n---\n\n"
-        f"任务：\n"
-        f"1. 以『论坛管理员』身份写一个置顶公告帖（转述公开信息中的评选结果，语气官方、克制、简短）；\n"
-        f"2. 写 {len(posters)} 个主题帖，按上述人设顺序每帖对应一位发帖人（用其昵称），"
-        f"态度和文风必须符合人设，且彼此不同；可延续其近期足迹里的梗和话题，但不要与之前的自己矛盾；"
-        f"帖子要像真的帖子：有标题，正文控制在 120 字以内，像随手发的，别写长文。\n\n"
-        f"输出 JSON：{{\"announcement\": {{\"title\": \"...\", \"body\": \"...\"}}, "
-        f"\"threads\": [{{\"nickname\": \"人设昵称\", \"title\": \"...\", \"body\": \"...\"}}]}}\n\n"
+        "写一条公告。JSON：{\"title\": \"...\", \"body\": \"...\"}。"
+        "正文不超过 90 字，只写事实（结果/对象/依据），"
+        "材料支持时才加一句程序性收尾（如『后续不再就评审细节作说明』）。"
+    )
+    return chat(client, model, _ANNOUNCE_SYSTEM, user, min(temperature, 0.8), max_tokens=250)
+
+
+def generate_one_thread(client, model, persona, rules, title, public_text,
+                        taken_titles, temperature) -> dict:
+    """主题帖单角色单调用，与 generate_one_comment 同构：情境+动机+自己的
+    记忆/状态/倒计时+信息不对称（HANDOFF 缺陷2 的修复点）。"""
+    import random
+    motive = random.choice(_THREAD_MOTIVES)
+    mem_block = memory.footprints([persona["nickname"]], k=3, width=50)
+    hot = memory.hot_topics()
+    taken = "、".join(f"《{t}》" for t in taken_titles[-4:])
+    user = (
+        f"【论坛正在讨论的事】{title}\n\n"
+        f"【公开信息（你的全部事实来源）】\n---\n{public_text}\n---\n\n"
+        f"【你此刻的动机】{motive}\n\n"
+        + (f"【你自己的近期足迹】\n{mem_block}\n\n" if mem_block else "")
+        + (f"{hot}\n\n" if hot else "")
+        + (f"【别撞车】已经有人发了：{taken}。你要换个角度或换个话题点。\n\n" if taken else "")
+        + f"以{persona['nickname']}的口吻发一帖。JSON：{{\"title\": \"...\", \"body\": \"...\"}}。"
+        "标题像随手起的，可以不完整；正文不超过 120 字，像真人在手机上打的，别写成通稿。\n\n"
         + post_block(include_reply_example=False)
     )
-    return chat(client, model, system, user, temperature, max_tokens=6000)
+    return chat(client, model, persona_system(persona, rules), user, temperature, max_tokens=300)
+
+
+def generate_threads(client, model, personas, rules, title, public_text, n_threads, temperature) -> dict:
+    """公告 + 各主题帖独立生成。
+
+    原实现是一次批量"编剧式"调用（全员人设卡拼盘 + max_tokens=6000），不注入
+    动态状态/倒计时 → 同一角色帖子与评论里倒计时互相矛盾（HANDOFF 缺陷2）。
+    现在公告 1 次 + 每帖 1 次，帖子与评论走同一套单角色提示。成本：每快照
+    +N 次调用，相对评论侧的 20-30 次是小头。"""
+    announcement = None
+    try:
+        announcement = generate_announcement(client, model, title, public_text, temperature)
+    except (json.JSONDecodeError, KeyError) as exc:
+        print(f"警告：公告生成失败：{exc}", file=sys.stderr)
+    threads: list[dict] = []
+    titles: list[str] = []
+    for p in eligible_posters(personas, n_threads):
+        try:
+            t = generate_one_thread(client, model, p, rules, title, public_text, titles, temperature)
+        except (json.JSONDecodeError, KeyError) as exc:
+            print(f"警告：{p['nickname']} 主题帖生成失败：{exc}", file=sys.stderr)
+            continue
+        body = str(t.get("body", "")).strip()
+        if not body:
+            continue
+        thread_title = str(t.get("title") or "").strip() or "（无题）"
+        titles.append(thread_title)
+        threads.append({"nickname": p["nickname"], "title": thread_title, "body": body})
+    return {"announcement": announcement, "threads": threads}
 
 
 def generate_comments(client, model, personas, rules, thread, temperature) -> dict:
@@ -425,33 +483,47 @@ def generate_replies_to_comment(client, model, personas, rules, thread, target_c
     return {"comments": comments}
 
 
+def generate_one_daily(client, model, persona, rules, hour, taken_titles, temperature) -> dict:
+    """日常水帖单角色单调用（原为批量调用、不注入状态/倒计时，缺陷2 同源）。"""
+    import random
+    motive = random.choice(_DAILY_MOTIVES)
+    mem_block = memory.footprints([persona["nickname"]], k=3, width=50)
+    hot = memory.hot_topics()
+    taken = "、".join(f"《{t}》" for t in taken_titles[-4:])
+    user = (
+        f"【现在】{hour} 点，论坛没有新的评选或新闻。\n\n"
+        f"【你此刻的动机】{motive}\n\n"
+        + (f"【你自己的近期足迹】\n{mem_block}\n\n" if mem_block else "")
+        + (f"{hot}\n\n" if hot else "")
+        + (f"【别撞车】已经有人发了：{taken}。你聊点别的。\n\n" if taken else "")
+        + f"以{persona['nickname']}的口吻发一帖。JSON：{{\"title\": \"...\", \"body\": \"...\"}}。"
+        "话题只限校园日常：食堂、上课、考试、作业、宿舍、社团、天气、通勤、各自近况。"
+        "不要编造任何评选结果、奖项或新闻事实。标题像随手起的；正文不超过 100 字。\n\n"
+        + post_block(include_reply_example=False)
+    )
+    return chat(client, model, persona_system(persona, rules), user, temperature, max_tokens=300)
+
+
 def generate_daily(client, model, personas, rules, temperature, n_threads=3) -> dict:
-    """日常水帖：没有新闻/评选事件时，学生靠记忆和热帖自发聊校园日常。"""
+    """日常水帖：逐帖独立生成（保持原签名，server /daily 直接兼容）。"""
     from datetime import datetime
     ensure_fresh_states(client, model, personas)
     hour = datetime.now().hour
-    posters = eligible_posters(personas, n_threads, hour=hour)
-    system = (
-        "你是校园论坛的学生扮演系统。现在论坛没有新的评选或新闻事件，"
-        "学生们自发地聊校园日常。输出严格遵守用户要求的 JSON 格式。\n\n"
-        "全体规则：\n" + rules_block(rules)
-    )
-    cards = "\n".join(persona_card(p) for p in posters)
-    footprints_block = memory.footprints([p["nickname"] for p in posters], k=3, width=50)
-    hot = memory.hot_topics()
-    user = (
-        f"学生人设（本次发帖人，共 {len(posters)} 人）：\n{cards}\n\n"
-        + (f"{footprints_block}\n\n" if footprints_block else "")
-        + (f"{hot}\n\n" if hot else "")
-        + f"现在是 {hour} 点。没有新的评选结果或新闻。\n\n"
-        f"任务：写 {len(posters)} 个日常帖，按上述人设顺序每帖对应一位发帖人。"
-        f"话题限于校园日常：食堂、考试、宿舍、社团、天气、通勤、最近的生活小事、各自的近况。"
-        f"不要编造任何评选结果、奖项或新闻事实；可以延续各自近期足迹里的梗、话题和关系。"
-        f"帖子要像真人随手发的：有标题，正文控制在 100 字以内，符合人设的口癖和出没场景，别写长文。\n\n"
-        f"输出 JSON：{{\"threads\": [{{\"nickname\": \"人设昵称\", \"title\": \"...\", \"body\": \"...\"}}]}}\n\n"
-        + post_block(include_reply_example=False)
-    )
-    return chat(client, model, system, user, temperature, max_tokens=5000)
+    threads: list[dict] = []
+    titles: list[str] = []
+    for p in eligible_posters(personas, n_threads, hour=hour):
+        try:
+            t = generate_one_daily(client, model, p, rules, hour, titles, temperature)
+        except (json.JSONDecodeError, KeyError) as exc:
+            print(f"警告：{p['nickname']} 日常帖生成失败：{exc}", file=sys.stderr)
+            continue
+        body = str(t.get("body", "")).strip()
+        if not body:
+            continue
+        thread_title = str(t.get("title") or "").strip() or "（无题）"
+        titles.append(thread_title)
+        threads.append({"nickname": p["nickname"], "title": thread_title, "body": body})
+    return {"threads": threads}
 
 
 def generate_snapshot(pack: dict, *, threads: int | None = None, env_path: str | Path | None = None, temperature: float = 1.15) -> dict:
