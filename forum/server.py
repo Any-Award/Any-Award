@@ -29,7 +29,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from generate import generate_snapshot, generate_comments, generate_replies_to_comment, generate_daily, save_snapshot, load_personas, load_llm_env
+from generate import generate_snapshot, generate_comments, generate_replies_to_comment, generate_daily, save_snapshot, load_personas, load_llm_env, ensure_fresh_states
 import memory
 from openai import OpenAI
 from dotenv import dotenv_values
@@ -236,6 +236,8 @@ def make_handler() -> type:
                 self._handle_generate()
             elif path == "/daily":
                 self._handle_daily()
+            elif path == "/refresh":
+                self._handle_refresh()
             elif path == "/api/threads":
                 self._handle_new_thread()
             elif path.startswith("/api/threads/") and path.endswith("/comments"):
@@ -267,6 +269,17 @@ def make_handler() -> type:
                     memory.record_thread(thread)
                 save_state(state)
                 self._json(200, {"ok": True, "threads": [public_thread(t) for t in reversed(state["threads"])]})
+
+        def _handle_refresh(self) -> None:
+            try:
+                env = load_llm_env()
+                client = OpenAI(api_key=env["LLM_API_KEY"], base_url=env["LLM_API_BASE"])
+                personas = load_personas()["personas"]
+                ensure_fresh_states(client, env["LLM_MODEL_NAME"], personas)
+            except Exception as exc:  # noqa: BLE001
+                self._json(500, {"error": str(exc)})
+                return
+            self._json(200, {"ok": True, "states": memory.load_states()})
 
         def _handle_daily(self) -> None:
             try:

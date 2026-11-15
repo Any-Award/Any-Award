@@ -16,7 +16,25 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 MEMORY_DIR = HERE / "data" / "memory"
 STATE_PATH = HERE / "data" / "forum.json"
+STATES_PATH = HERE / "data" / "states.json"
 KEEP = 50
+
+# 重要性启发式（对齐 Stanford poignancy：1=刷牙日常，10=分手/录取）
+_IMPORTANT_WORDS = (
+    "落选", "上岸", "获奖", "分手", "公示", "录取", "淘汰", "逆袭",
+    "诺奖", "奖学金", "保研", "考研", "挂科", "退学", "崩溃", "抑郁",
+)
+
+
+def _importance(item: dict) -> int:
+    score = 5 if item.get("kind") == "thread" else 2
+    body = str(item.get("body", ""))
+    score += min(3, len(body) // 60)        # 长正文 +≤3
+    if item.get("reply_to_nick"):
+        score += 1                          # 有互动对象
+    if any(w in body for w in _IMPORTANT_WORDS):
+        score += 2                          # 命中情感/重大词
+    return min(10, score)
 
 
 def _path(nickname: str) -> Path:
@@ -40,6 +58,8 @@ def append(nickname: str, item: dict) -> None:
         return
     MEMORY_DIR.mkdir(parents=True, exist_ok=True)
     items = recent(nickname, KEEP)
+    item = dict(item)
+    item.setdefault("importance", _importance(item))
     items.append(item)
     _path(nickname).write_text(json.dumps(items[-KEEP:], ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
@@ -80,11 +100,36 @@ def record_thread(thread: dict) -> None:
         record_comment(thread, c)
 
 
+def retrieve(nick: str, k: int = 5, query: str | None = None) -> list[dict]:
+    """加权检索（Stanford retrieve 的 recency + importance 两信号）。
+
+    score = 0.5*norm(0.99^距最新条数) + 3*norm(importance/10)，取 top-k 按时间序返回。
+    第三信号 relevance（embedding）留待 P1；query 参数预留，当前忽略。
+    旧条目无 importance 字段时默认 3，无需迁移。
+    """
+    items = recent(nick, KEEP)
+    if not items:
+        return []
+    n = len(items)
+    recency = [0.99 ** (n - 1 - i) for i in range(n)]
+    importance = [float(it.get("importance", 3)) / 10 for it in items]
+
+    def norm(xs):
+        lo, hi = min(xs), max(xs)
+        return [(x - lo) / (hi - lo) if hi > lo else 0.5 for x in xs]
+
+    rn, inn = norm(recency), norm(importance)
+    scores = [0.5 * rn[i] + 3 * inn[i] for i in range(n)]
+    top = sorted(range(n), key=lambda i: scores[i], reverse=True)[:k]
+    top.sort()  # 按时间序返回，便于阅读
+    return [items[i] for i in top]
+
+
 def footprints(nicknames: list[str], k: int = 3, width: int = 60) -> str:
     """生成"各人近期足迹"提示块；没有记忆的人返回空串占位说明。"""
     blocks = []
     for nick in nicknames:
-        items = recent(nick, k)
+        items = retrieve(nick, k)
         if not items:
             continue
         lines = []
@@ -110,3 +155,27 @@ def hot_topics(k: int = 4) -> str:
     if not titles:
         return ""
     return "论坛最近的热帖：" + "、".join(f"《{t}》" for t in reversed(titles))
+
+
+# ---------------------------------------------------------------------------
+# 动态状态（斯坦福 revise_identity 的轻量版）：每生一份 currently + 洞察
+# ---------------------------------------------------------------------------
+
+def load_states() -> dict:
+    if not STATES_PATH.is_file():
+        return {}
+    try:
+        return json.loads(STATES_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def save_states(states: dict) -> None:
+    STATES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp = STATES_PATH.with_suffix(".tmp")
+    tmp.write_text(json.dumps(states, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    tmp.replace(STATES_PATH)
+
+
+def get_state(nickname: str) -> dict | None:
+    return load_states().get(nickname)

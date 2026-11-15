@@ -92,6 +92,201 @@ def rules_block(rules: list[str]) -> str:
     return "\n".join(f"{i}. {r}" for i, r in enumerate(rules, 1))
 
 
+def post_block(include_reply_example: bool = True) -> str:
+    """压轴风格指令（SillyTavern post_history_instructions）：复用 humanize_block，
+    追加信息不对称（Stanford 对话 prompt）与单角色口吻重申。放在 user 末尾、生成点之前。"""
+    base = humanize_block()
+    if not include_reply_example:
+        base = base.split("【盖楼范例】")[0].rstrip()
+    extra = (
+        "【信息不对称】你只知道本帖公开内容和你自己的近期足迹，不知道别人未公开的想法或材料里没写的事。\n"
+        "【单角色口吻】每条只以对应昵称的口吻写，串味（像别的角色或像 AI 客服）即失败。\n"
+        "【禁修辞弧】不要『个人经历→感悟升华→安慰/号召』的闭环，不要结尾给人生道理或安慰号召；话可以说一半、没结论、跑题。\n"
+        "【禁金句】不要工整对仗的格言警句（如『匿名本来让人敢说，可也让人敢伤人』这种）。\n"
+        "【口头禅克制】标志句/口头禅偶尔用，不是每条必甩；大部分时候就像普通人随口说话。"
+    )
+    return base + "\n" + extra
+
+
+def _is_night_owl(p: dict) -> bool:
+    # 仅"严格夜行"角色受时段门控（白天从不出现/只在深夜/凌晨出没）；
+    # "深夜也在线""深夜情感帖必到"这类只是兼在深夜，不算夜猫子。
+    scene = str(p.get("scene", ""))
+    return ("白天从不" in scene) or ("只在深夜" in scene) or ("凌晨出没" in scene)
+
+
+def _night_ok(hour: int) -> bool:
+    return hour >= 23 or hour < 7
+
+
+def _weighted_sample(pool: list, weights: list, k: int) -> list:
+    """加权无放回抽样。"""
+    import random
+    pool, weights = list(pool), list(weights)
+    out = []
+    for _ in range(min(k, len(pool))):
+        chosen = random.choices(pool, weights=weights, k=1)[0]
+        idx = pool.index(chosen)
+        out.append(chosen)
+        pool.pop(idx)
+        weights.pop(idx)
+    return out
+
+
+def eligible_posters(personas: list, n: int, hour: int | None = None) -> list:
+    """场景门控后的发帖人抽样：深夜/凌晨角色仅在 23–7 点可被抽中。"""
+    from datetime import datetime
+    hour = datetime.now().hour if hour is None else hour
+    pool = [p for p in personas if not _is_night_owl(p) or _night_ok(hour)]
+    if not pool:
+        pool = list(personas)
+    return _weighted_sample(pool, [1.0] * len(pool), min(n, len(pool)))
+
+
+def pick_responders(personas: list, thread: dict, target_comment: dict | None = None,
+                    n: int = 6, hour: int | None = None) -> list:
+    """场景门控 + 关系加权的回应者抽样（廉价版 Stanford decide_to_talk）。
+    relations 文本含楼主或目标评论者昵称者权重 +2，让互怼/饭搭子更易同框。"""
+    from datetime import datetime
+    hour = datetime.now().hour if hour is None else hour
+    op = thread.get("nickname", "")
+    target_nick = (target_comment.get("author") or {}).get("nickname", "") if target_comment else ""
+    pool = [p for p in personas
+            if p["nickname"] != op and (not _is_night_owl(p) or _night_ok(hour))]
+    if not pool:
+        pool = [p for p in personas if p["nickname"] != op]
+    weights = []
+    for p in pool:
+        w = 1.0
+        rel = str(p.get("relations", ""))
+        if op and op in rel:
+            w += 2
+        if target_nick and target_nick in rel:
+            w += 2
+        weights.append(w)
+    return _weighted_sample(pool, weights, min(n, len(pool)))
+
+
+# 微情境动机池：让话从具体处境长出来，而非"写个有趣帖子"（斯坦福情境驱动）
+_MOTIVES = [
+    "你正好经历过类似的事，想说两句",
+    "你不太同意楼主，想抬个杠",
+    "你觉得这事挺好笑，想乐一下",
+    "你只是想随手水一句，懒得长篇大论",
+    "你想起自己的一件事，顺嘴一提",
+    "你懒得回，但忍不住接个话",
+    "你有点感同身受，想说点实在的",
+]
+
+
+def comment_situation(thread: dict, prior_comments: list) -> tuple:
+    """构造"你刚看到的"微情境：本帖 + 已生成评论（供楼中楼）+ 随机动机。"""
+    import random
+    saw = f"帖子《{thread.get('title', '')}》：{str(thread.get('body', ''))[:200]}"
+    if prior_comments:
+        saw += "\n你刚看到这几条评论：\n" + "\n".join(
+            f"  {c.get('nickname', '?')}：{str(c.get('body', ''))[:80]}"
+            for c in prior_comments[-3:]
+        )
+    return saw, random.choice(_MOTIVES)
+
+
+def generate_one_comment(client, model, persona, rules, situation, motive, mem_block, temperature) -> dict:
+    """单角色单调用：只喂该角色的情境 + 自己的记忆，打破"一个编剧写群戏"。
+    映射斯坦福 v2 一次一句 + 情境模板 + 信息不对称。"""
+    examples = persona.get("examples") or []
+    import random
+    sample = random.sample(examples, min(4, len(examples))) if examples else []
+    ex = "\n".join(f"  · {e}" for e in sample)
+    state = memory.get_state(persona["nickname"]) or {}
+    state_lines = ""
+    if state.get("currently"):
+        state_lines += f"你当前的状态：{state['currently']}\n"
+    cd = _countdown(persona)
+    if cd:
+        state_lines += cd + "\n"
+    if state.get("insight"):
+        state_lines += f"你最近想明白的事：{state['insight']}\n"
+    system = (
+        f"你就是{persona['nickname']}（{persona['tag']}）。{persona['personality']}\n"
+        + (state_lines + "\n" if state_lines else "")
+        + f"语气：{persona['style']}\n"
+        f"说话样板（学腔调，别照抄）：\n{ex}\n"
+        f"你在刷校园论坛，随手评论。不是写作文，不是表演角色。\n\n"
+        "全体规则：\n" + rules_block(rules)
+    )
+    user = (
+        f"【你刚看到的】{situation}\n\n"
+        f"【你此刻的动机】{motive}\n\n"
+        + (f"【你自己的近期记忆】{mem_block}\n\n" if mem_block else "")
+        + "【信息不对称】你只知道上面这些和你自己的记忆，不知道别人没公开的想法。\n\n"
+        f"以{persona['nickname']}的口吻说一句话或一小段。可回复楼主（reply_to=楼主）"
+        f"或上面某条评论者（reply_to=其昵称）；懒得回就 skip=true。\n"
+        f"输出 JSON：{{\"body\": \"...\", \"reply_to\": \"楼主或昵称或null\", \"skip\": false}}\n\n"
+        + post_block(include_reply_example=False)
+    )
+    return chat(client, model, system, user, temperature, max_tokens=800)
+
+
+def _countdown(persona: dict) -> str:
+    """考研倒计时：存考试日期、每次现算天数（根除硬编码不一致）。"""
+    exam = persona.get("exam_date")
+    if not exam:
+        return ""
+    from datetime import date
+    try:
+        y, m, d = map(int, str(exam).split("-"))
+        days = (date(y, m, d) - date.today()).days
+        return f"距离考研还有{days}天" if days >= 0 else "考研刚结束"
+    except (ValueError, AttributeError):
+        return ""
+
+
+def refresh_one_state(client, model, persona, today) -> dict:
+    """每生一次调用：基于近期足迹重写 currently + 一条洞察（斯坦福 revise_identity + reflect-lite）。"""
+    nick = persona["nickname"]
+    footprints = memory.footprints([nick], k=8, width=80)
+    old = memory.get_state(nick) or {}
+    old_currently = old.get("currently") or persona.get("personality", "")
+    system = (
+        f"你是{nick}（{persona['tag']}）。{persona['personality']}\n"
+        f"根据你最近在论坛的足迹，更新你今天的当前状态。状态是具体的心情/近况，口语化，不是人设介绍。"
+    )
+    user = (
+        f"你昨天的状态：{old_currently}\n"
+        f"你最近的论坛足迹：\n{footprints or '（最近没说话）'}\n"
+        f"今天是 {today}。\n\n"
+        f"输出 JSON：{{\"currently\": \"一句话当前状态/心情（具体、口语）\", "
+        f"\"insight\": \"你最近想明白的一件事（没有就空字符串）\"}}"
+    )
+    r = chat(client, model, system, user, temperature=0.9, max_tokens=400)
+    return {
+        "currently": str(r.get("currently", "")).strip() or old_currently,
+        "insight": str(r.get("insight", "")).strip(),
+        "updated_at": today,
+    }
+
+
+def ensure_fresh_states(client, model, personas) -> None:
+    """按日期缓存：每生每天最多刷新一次状态。"""
+    from datetime import date
+    today = date.today().isoformat()
+    states = memory.load_states()
+    changed = False
+    for p in personas:
+        nick = p["nickname"]
+        st = states.get(nick)
+        if st and st.get("updated_at") == today:
+            continue
+        try:
+            states[nick] = refresh_one_state(client, model, p, today)
+            changed = True
+        except (json.JSONDecodeError, KeyError):
+            continue
+    if changed:
+        memory.save_states(states)
+
+
 def chat(client: OpenAI, model: str, system: str, user: str, temperature: float, max_tokens: int) -> dict:
     for attempt in range(2):  # 模型偶发非法 JSON，重试一次
         resp = client.chat.completions.create(
@@ -113,12 +308,11 @@ def chat(client: OpenAI, model: str, system: str, user: str, temperature: float,
 
 
 def generate_threads(client, model, personas, rules, title, public_text, n_threads, temperature) -> dict:
-    import random
-    posters = random.sample(personas, min(n_threads, len(personas)))
+    posters = eligible_posters(personas, n_threads)
     system = (
         "你是校园论坛的学生扮演系统。你根据给定的公开信息和一批学生人设，"
         "以不同学生的口吻撰写论坛帖子。输出严格遵守用户要求的 JSON 格式。\n\n"
-        "全体规则：\n" + rules_block(rules) + "\n\n" + humanize_block()
+        "全体规则：\n" + rules_block(rules)
     )
     cards = "\n".join(persona_card(p) for p in posters)
     footprints_block = memory.footprints([p["nickname"] for p in posters])
@@ -135,83 +329,77 @@ def generate_threads(client, model, personas, rules, title, public_text, n_threa
         f"态度和文风必须符合人设，且彼此不同；可延续其近期足迹里的梗和话题，但不要与之前的自己矛盾；"
         f"帖子要像真的帖子：有标题，正文长短不一。\n\n"
         f"输出 JSON：{{\"announcement\": {{\"title\": \"...\", \"body\": \"...\"}}, "
-        f"\"threads\": [{{\"nickname\": \"人设昵称\", \"title\": \"...\", \"body\": \"...\"}}]}}"
+        f"\"threads\": [{{\"nickname\": \"人设昵称\", \"title\": \"...\", \"body\": \"...\"}}]}}\n\n"
+        + post_block(include_reply_example=False)
     )
     return chat(client, model, system, user, temperature, max_tokens=6000)
 
 
 def generate_comments(client, model, personas, rules, thread, temperature) -> dict:
-    system = (
-        "你是校园论坛的学生扮演系统。给定一个论坛主题帖，你以其他学生的口吻撰写评论。"
-        "输出严格遵守用户要求的 JSON 格式。\n\n"
-        "全体规则：\n" + rules_block(rules) + "\n\n" + humanize_block()
-    )
+    """逐条独立生成：每个回应者单独一次调用，只喂其情境+自己的记忆。
+    回应门控（pick_responders 抽样 3~5 人）+ 单条可 skip（潜水）。后条可见前条以形成楼中楼。"""
     import random
-    others = [p for p in personas if p["nickname"] != thread.get("nickname")]
-    others = random.sample(others, min(6, len(others)))
-    cards = "\n".join(persona_card(p) for p in others)
-    footprints_block = memory.footprints([p["nickname"] for p in others], k=2, width=40)
-    hot = memory.hot_topics()
-    user = (
-        f"学生人设（评论只能从这些人里选，不能是楼主本人）：\n{cards}\n\n"
-        + (f"{footprints_block}\n\n" if footprints_block else "")
-        + (f"{hot}\n\n" if hot else "")
-        + f"主题帖（楼主：{thread.get('nickname')}）：\n标题：{thread.get('title')}\n正文：{thread.get('body')}\n\n"
-        f"任务：写 4~6 条评论，像真实盖楼。必须出现至少一组楼中楼（有人回复楼主后，另一人回复那条 AI 评论，再有人接下去），"
-        f"不要所有人都只回复楼主。reply_to 填『楼主』或对方昵称。要有歪楼、接梗、抬杠、纯情绪短评（有的就一个字），"
-        f"长度长短不一，不要每条都完整论证。符合各自人设口吻和表达缺陷，可延续自己之前的立场；抬杠对事不对人。\n\n"
-        f"输出 JSON：{{\"comments\": [{{\"nickname\": \"人设昵称\", \"body\": \"...\", \"reply_to\": \"楼主或对方昵称\"}}]}}"
-    )
-    return chat(client, model, system, user, temperature, max_tokens=3000)
+    responders = pick_responders(personas, thread, n=random.randint(3, 5))
+    comments = []
+    for p in responders:
+        situation, motive = comment_situation(thread, comments)
+        mem_block = memory.footprints([p["nickname"]], k=3, width=50)
+        try:
+            r = generate_one_comment(client, model, p, rules, situation, motive, mem_block, temperature)
+        except (json.JSONDecodeError, KeyError):
+            continue
+        if r.get("skip"):
+            continue
+        body = str(r.get("body", "")).strip()
+        if not body:
+            continue
+        comments.append({"nickname": p["nickname"], "body": body, "reply_to": r.get("reply_to") or "楼主"})
+    return {"comments": comments}
 
 
 def generate_replies_to_comment(client, model, personas, rules, thread, target_comment, recent_comments, temperature) -> dict:
-    """针对玩家的一条具体评论生成学生回应（真正的对话，不是泛泛谈主帖）。"""
-    system = (
-        "你是校园论坛的学生扮演系统。玩家在帖子下发表了一条评论，"
-        "你要让其他学生针对这条评论作出回应，形成真实对话。输出严格遵守用户要求的 JSON 格式。\n\n"
-        "全体规则：\n" + rules_block(rules) + "\n\n" + humanize_block()
-    )
+    """针对玩家具体评论，逐条独立生成回应（每条只喂该角色情境+自己的记忆）。"""
     import random
-    others = [p for p in personas if p["nickname"] != thread.get("nickname")]
-    others = random.sample(others, min(6, len(others)))
-    cards = "\n".join(persona_card(p) for p in others)
-    recent = "\n".join(
-        f"- {c.get('author', {}).get('nickname', c.get('nickname', '?'))}：{c.get('body', '')}"
-        for c in (recent_comments or [])[-6:]
-    )
-    footprints_block = memory.footprints([p["nickname"] for p in others], k=2, width=40)
-    hot = memory.hot_topics()
-    user = (
-        f"学生人设（回应者只能从这些人里选）：\n{cards}\n\n"
-        + (f"{footprints_block}\n\n" if footprints_block else "")
-        + (f"{hot}\n\n" if hot else "")
-        + f"主题帖背景（楼主：{thread.get('nickname')}）：\n标题：{thread.get('title')}\n正文：{thread.get('body')}\n\n"
-        f"帖子下最近的评论：\n{recent or '（暂无）'}\n\n"
-        f"玩家「{target_comment.get('author', {}).get('nickname', '?')}」刚刚发的评论：\n"
-        f"「{target_comment.get('body', '')}」\n\n"
-        f"任务：写 4~6 条学生回应，像真实盖楼。先有人针对玩家这条评论说话（reply_to 填玩家昵称），"
-        f"然后必须出现至少一组楼中楼：其他 AI 互相回复、接话、抬杠、歪楼（reply_to 填对方昵称），不要所有人都只回玩家。"
-        f"不要泛泛评论主帖，不要每条都完整论证。长度长短不一（有的就一个字『草』『蹲』），符合各自人设口吻和表达缺陷。\n\n"
-        f"输出 JSON：{{\"comments\": [{{\"nickname\": \"人设昵称\", \"body\": \"...\", \"reply_to\": \"玩家昵称或对方昵称\"}}]}}"
-    )
-    return chat(client, model, system, user, temperature, max_tokens=3000)
+    responders = pick_responders(personas, thread, target_comment=target_comment, n=random.randint(3, 5))
+    player_nick = (target_comment.get("author") or {}).get("nickname", "玩家")
+    base = f"帖子《{thread.get('title', '')}》：{str(thread.get('body', ''))[:150]}"
+    if recent_comments:
+        base += "\n最近的评论：\n" + "\n".join(
+            f"  {c.get('author', {}).get('nickname', '?')}：{str(c.get('body', ''))[:60]}"
+            for c in recent_comments[-4:]
+        )
+    comments = []
+    for p in responders:
+        situation = base + f"\n玩家「{player_nick}」刚评论：「{target_comment.get('body', '')}」"
+        motive = random.choice(_MOTIVES)
+        mem_block = memory.footprints([p["nickname"]], k=3, width=50)
+        try:
+            r = generate_one_comment(client, model, p, rules, situation, motive, mem_block, temperature)
+        except (json.JSONDecodeError, KeyError):
+            continue
+        if r.get("skip"):
+            continue
+        body = str(r.get("body", "")).strip()
+        if not body:
+            continue
+        comments.append({"nickname": p["nickname"], "body": body, "reply_to": r.get("reply_to") or player_nick})
+    return {"comments": comments}
 
 
 def generate_daily(client, model, personas, rules, temperature, n_threads=3) -> dict:
     """日常水帖：没有新闻/评选事件时，学生靠记忆和热帖自发聊校园日常。"""
-    import random
     from datetime import datetime
-    posters = random.sample(personas, min(n_threads, len(personas)))
+    ensure_fresh_states(client, model, personas)
+    hour = datetime.now().hour
+    posters = eligible_posters(personas, n_threads, hour=hour)
     system = (
         "你是校园论坛的学生扮演系统。现在论坛没有新的评选或新闻事件，"
         "学生们自发地聊校园日常。输出严格遵守用户要求的 JSON 格式。\n\n"
-        "全体规则：\n" + rules_block(rules) + "\n\n" + humanize_block()
+        "全体规则：\n" + rules_block(rules)
     )
     cards = "\n".join(persona_card(p) for p in posters)
     footprints_block = memory.footprints([p["nickname"] for p in posters], k=3, width=50)
     hot = memory.hot_topics()
-    hour = datetime.now().hour
     user = (
         f"学生人设（本次发帖人，共 {len(posters)} 人）：\n{cards}\n\n"
         + (f"{footprints_block}\n\n" if footprints_block else "")
@@ -221,7 +409,8 @@ def generate_daily(client, model, personas, rules, temperature, n_threads=3) -> 
         f"话题限于校园日常：食堂、考试、宿舍、社团、天气、通勤、最近的生活小事、各自的近况。"
         f"不要编造任何评选结果、奖项或新闻事实；可以延续各自近期足迹里的梗、话题和关系。"
         f"帖子要像真人随手发的：有标题，正文长短不一，符合人设的口癖和出没场景。\n\n"
-        f"输出 JSON：{{\"threads\": [{{\"nickname\": \"人设昵称\", \"title\": \"...\", \"body\": \"...\"}}]}}"
+        f"输出 JSON：{{\"threads\": [{{\"nickname\": \"人设昵称\", \"title\": \"...\", \"body\": \"...\"}}]}}\n\n"
+        + post_block(include_reply_example=False)
     )
     return chat(client, model, system, user, temperature, max_tokens=5000)
 
@@ -243,6 +432,7 @@ def generate_snapshot(pack: dict, *, threads: int | None = None, env_path: str |
     hints = pack.get("hints") or {}
     n = threads or int(hints.get("threads") or 4)
 
+    ensure_fresh_states(client, model, personas)
     first = generate_threads(client, model, personas, rules, title, public_text, n, temperature)
     thread_list = first.get("threads") or []
     known = {p["nickname"] for p in personas}
@@ -293,7 +483,7 @@ def main() -> None:
     src.add_argument("--volume", help="校史馆卷宗 volume.md 路径（经 adapter 转换）")
     parser.add_argument("--threads", type=int, default=None, help="主题帖数量（默认 4，或 hints.threads）")
     parser.add_argument("--temperature", type=float, default=1.15)
-    parser.add_argument("--env", default=str(WORKSPACE / "Any-Award-Backend/.env"))
+    parser.add_argument("--env", default=None, help="LLM 配置 .env 路径；缺省走 load_llm_env() 回退（环境变量>项目.env>私有密钥文件）")
     parser.add_argument("--out-dir", default=str(HERE / "output"))
     args = parser.parse_args()
 
