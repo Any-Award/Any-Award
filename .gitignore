@@ -1,0 +1,25 @@
+# 独立后端仓库（有自己的 .git，不纳入本仓库）
+Any-Award-Backend/
+
+# 依赖与构建产物
+node_modules/
+.venv/
+venv/
+dist/
+__pycache__/
+*.pyc
+
+# 密钥（绝不提交）
+.env
+*.env
+!.env.example
+
+# 运行时中转区与备份
+archive/inbox/
+forum/data/backup-*/
+*.tmp
+*.log
+
+# 系统
+.DS_Store
+Thumbs.db

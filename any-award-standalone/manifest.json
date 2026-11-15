@@ -1,0 +1,99 @@
+{
+  "project": "Any Award standalone",
+  "files": [
+    {
+      "file": "assets/people/thumbnail_guoxiaozhang.png",
+      "sha256": "194bd1c23a08c60ba598b64cb3760a9102d6070952edc21d4397b94968867b1b",
+      "source": "assets_png/people/thumbnail_guoxiaozhang.png"
+    },
+    {
+      "file": "assets/people/thumbnail_libuzhang.png",
+      "sha256": "43de37a6b56c98d466f35a868996382d35df8b0d47b3f6918c20c09b41b5cbc6",
+      "source": "assets_png/people/thumbnail_libuzhang.png"
+    },
+    {
+      "file": "assets/people/thumbnail_qianjiaoshou.png",
+      "sha256": "1cc0b330861788f98b5483dfc57ce8adff2dca6d169868aad7786c124f2f8063",
+      "source": "assets_png/people/thumbnail_qianjiaoshou.png"
+    },
+    {
+      "file": "assets/people/thumbnail_sunchuzhang.png",
+      "sha256": "519e3f19818df693e6a99fb74917028c125234715000dbab0b1fe8296c148d77",
+      "source": "assets_png/people/thumbnail_sunchuzhang.png"
+    },
+    {
+      "file": "assets/people/thumbnail_zhaofuzhuren.png",
+      "sha256": "06ef7dfe19a4cd626e5dd2a55070df3c0bbb7ea8cd550b140e85597b368632c2",
+      "source": "assets_png/people/thumbnail_zhaofuzhuren.png"
+    },
+    {
+      "file": "assets/people/thumbnail_zhouchuzhang.png",
+      "sha256": "49c0cca1906c0ed234527286973d00e02d315d8b44267fee8b97f5b7cc5f33c9",
+      "source": "assets_png/people/thumbnail_zhouchuzhang.png"
+    },
+    {
+      "file": "assets/people/whole_demogirl.png",
+      "sha256": "28384d6626bbf7f5751b6316cd84c42a9402ea094f35b5ec8a40cfcfdedc5daf",
+      "source": "assets_png/people/whole_demogirl.png"
+    },
+    {
+      "file": "assets/people/whole_guoxiaozhang.png",
+      "sha256": "ce7d525c8540af042d6d4be1875e84ccf72e26019458f0ec5119a97e88aac7ed",
+      "source": "assets_png/people/whole_guoxiaozhang.png"
+    },
+    {
+      "file": "assets/people/whole_libuzhang.png",
+      "sha256": "ff6973472145e2d67257b265f4de40fdacac1f5a0e3f3a18524a0aa3e5291257",
+      "source": "assets_png/people/whole_libuzhang.png"
+    },
+    {
+      "file": "assets/people/whole_quanjiaoshou.png",
+      "sha256": "aac7183d0a8101b278687b7a620f41ecb5e7e3bfc09c17465e183a29a8875386",
+      "source": "assets_png/people/whole_quanjiaoshou.png"
+    },
+    {
+      "file": "assets/people/whole_sunchuzhang.png",
+      "sha256": "de24462ca90583f78426ab4fe429a9bc81256cf2ad2ad8abc43b4d77d5d685fa",
+      "source": "assets_png/people/whole_sunchuzhang.png"
+    },
+    {
+      "file": "assets/people/whole_zhaofuzhuren.png",
+      "sha256": "569ccb8e52e878e370f8d598bad6086824804d88db40738110b1f44796447116",
+      "source": "assets_png/people/whole_zhaofuzhuren.png"
+    },
+    {
+      "file": "assets/people/whole_zhouchuzhang.png",
+      "sha256": "beb41a7af289e5c03f02b7428dcd2af06361cb5096ac756429e8a0f33eae90fe",
+      "source": "assets_png/people/whole_zhouchuzhang.png"
+    },
+    {
+      "file": "assets/places/meeting_room.png",
+      "sha256": "926306aad2b694c0d763b61cfa704eefd31bb9d8162da5337179f32855cafcfe",
+      "source": "assets_png/places/meeting_room.png"
+    },
+    {
+      "file": "assets/fonts/SourceHanSansSC-Regular.otf",
+      "sha256": "77fd3a37aa59d12f3927191621a304d212da7c33951de3c7e56a2020a0631496"
+    },
+    {
+      "file": "index.html",
+      "sha256": "09af6419f54a0500bfe39b4ce67dab1817e4e5d635b82ad9f7a9af4cc8fa2af7"
+    },
+    {
+      "file": "app.js",
+      "sha256": "8fd67ba1a23b27430bcddcd33238847b67aee0aaea98d68493775cb679f3aae0"
+    },
+    {
+      "file": "style.css",
+      "sha256": "f37a0b320fd30f23bc9086f8817f1bc0e9a766715821f7f4fad1bc2a25f91ba3"
+    },
+    {
+      "file": "data.js",
+      "sha256": "040f0eb808e5b3c5303fce1779f06f221aec85b9dad59fac3ae3bcc8272f4c84"
+    },
+    {
+      "file": "README.md",
+      "sha256": "70d9fc2b1106deba2622cb7bc0d4baf54a45b4f42a9c5277bcf44c5e7a2f4d04"
+    }
+  ]
+}

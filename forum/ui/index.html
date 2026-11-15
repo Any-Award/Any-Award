@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>树洞论坛 · 华清大学BBS</title>
+<style>
+:root{--header:#263445;--accent:#3b6ea5;--bg:#eef1f4;--card:#fff;--ink:#1d2733;--muted:#7a8896;--line:#dde3e9;--player:#c96a1b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;font-size:15px}
+.topbar{background:var(--header);color:#fff;padding:0 32px;height:58px;display:flex;align-items:center;gap:18px}
+.topbar .logo{font-size:21px;letter-spacing:3px;font-weight:600}
+.topbar .logo span{color:#9fc3e8;font-weight:400}
+.topbar nav{margin-left:auto;display:flex;gap:14px;align-items:center}
+.topbar a{color:#cdd9e5;text-decoration:none;font-size:14px}
+.topbar a:hover{color:#fff}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:4px;padding:8px 20px;font:inherit;font-size:14px;cursor:pointer}
+.btn:hover{filter:brightness(1.12)}
+.btn.ghost{background:transparent;border:1px solid #6f8aa3;color:#dbe6f0}
+.btn:disabled{opacity:.55;cursor:wait}
+.btn.big{padding:10px 34px;font-size:15px}
+.wrap{max-width:1024px;margin:22px auto 70px;padding:0 18px}
+.notice{color:var(--muted);font-size:13px;margin:0 0 14px}
+.board{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.row{display:flex;align-items:center;gap:14px;padding:15px 20px;border-bottom:1px solid var(--line);cursor:pointer}
+.row:hover{background:#f4f8fc}
+.row:last-child{border-bottom:none}
+.row .title{flex:1;font-size:16px}
+.row .meta{color:var(--muted);font-size:12px;white-space:nowrap}
+.badge{display:inline-block;font-size:11px;border-radius:3px;padding:2px 7px;margin-right:6px;vertical-align:2px}
+.badge.ai{background:#e3edf7;color:#3b6ea5}
+.badge.player{background:#fbe9d9;color:var(--player)}
+.badge.pin{background:#fbe0e0;color:#b34040}
+.count{color:var(--accent);font-size:13px;min-width:52px;text-align:right}
+.thread{background:var(--card);border:1px solid var(--line);border-radius:6px;margin-bottom:16px;padding:22px 26px}
+.thread h2{margin:0 0 8px;font-size:21px;font-weight:600}
+.thread .author{color:var(--muted);font-size:13px;margin-bottom:16px}
+.thread .body{font-size:16px;line-height:1.9;white-space:pre-wrap}
+.comment{border-top:1px solid var(--line);padding:14px 0;display:flex;gap:16px}
+.comment .floor{color:var(--muted);font-size:12px;white-space:nowrap;padding-top:4px;width:42px}
+.comment .content{flex:1}
+.comment .head{font-size:13px;margin-bottom:5px;color:var(--muted)}
+.comment .text{line-height:1.8;white-space:pre-wrap}
+.replybox{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px 24px;margin-top:20px}
+.replybox h3{margin:0 0 12px;font-size:16px;font-weight:600}
+textarea,input[type=text]{width:100%;border:1px solid var(--line);border-radius:4px;padding:10px 12px;font:inherit;font-size:15px;background:#fbfcfd;color:var(--ink)}
+textarea{min-height:110px;resize:vertical;line-height:1.7}
+input[type=text]{margin-bottom:12px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.actions{display:flex;gap:14px;align-items:center;margin-top:14px}
+.hint{font-size:13px;color:var(--muted)}
+.status{color:var(--accent);font-size:14px}
+.error{color:#b34040;font-size:14px}
+.backlink{display:inline-block;margin-bottom:14px;color:var(--accent);text-decoration:none;font-size:14px}
+.empty{padding:50px;text-align:center;color:var(--muted)}
+.ann-body{line-height:1.9;white-space:pre-wrap;font-size:15px}
+.replylink{color:var(--accent);font-size:12px;text-decoration:none;margin-left:6px}
+.replyref{color:var(--accent);font-size:13px}
+.comment.nested{border-left:3px solid #c9d8e8;padding-left:12px}
+#clearTarget{color:#b34040;font-size:12px;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">树洞论坛 <span>华清大学BBS</span></div>
+  <nav>
+    <a href="http://localhost:8767/" target="_blank">校史馆</a>
+    <button class="btn ghost" id="daily">日常水帖</button>
+    <button class="btn ghost" id="regen">AI舆情生成</button>
+    <button class="btn" id="newPost">发帖</button>
+  </nav>
+</div>
+<div class="wrap" id="app"><div class="empty">载入中……</div></div>
+
+<script>
+const app = document.getElementById('app');
+const nickKey = 'forum-nickname';
+function nickname() { return localStorage.getItem(nickKey) || ''; }
+function setNickname(v) { localStorage.setItem(nickKey, v); }
+function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+function fmt(t) { return (t || '').replace('T', ' ').slice(0, 16); }
+function badge(a) {
+  return a.kind === 'player'
+    ? `<span class="badge player">玩家</span>`
+    : `<span class="badge ai">AI同学</span>`;
+}
+function loading(msg) { app.innerHTML = `<div class="empty">${esc(msg)}</div>`; }
+
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `请求失败 ${res.status}`);
+  return data;
+}
+
+// ---------------- 列表页 ----------------
+async function listView() {
+  loading('载入帖子列表……');
+  const data = await api('/api/threads');
+  let html = '';
+  if (data.announcement) {
+    html += `<div class="board" style="margin-bottom:16px"><div class="row" style="cursor:default;background:#fdf6ec">
+      <div class="title"><span class="badge pin">置顶</span>${esc(data.announcement.title)}</div></div>
+      <div style="padding:0 20px 16px" class="ann-body">${esc(data.announcement.body)}</div></div>`;
+  }
+  html += '<p class="notice">帖子按最后活跃排序 · 点击标题进入 · AI 舆情生成会从校史馆卷宗生成一批新帖</p>';
+  html += '<div class="board">';
+  if (!data.threads.length) html += '<div class="empty">还没有帖子，点右上角「发帖」或「AI舆情生成」</div>';
+  for (const t of data.threads) {
+    html += `<div class="row" onclick="location.hash='#/thread/${t.id}'">
+      <div class="title">${badge(t.author)}${esc(t.title)}</div>
+      <div class="meta">${esc(t.author.nickname)}</div>
+      <div class="count">${t.comment_count} 回复</div>
+      <div class="meta">${fmt(t.last_activity)}</div>
+    </div>`;
+  }
+  html += '</div>';
+  app.innerHTML = html;
+}
+
+// ---------------- 详情页 ----------------
+let replyTarget = null;
+
+function bindReplyLinks() {
+  document.querySelectorAll('.replylink').forEach(a => {
+    a.onclick = () => {
+      replyTarget = { id: a.dataset.cid, nick: a.dataset.nick, floor: a.dataset.floor };
+      document.getElementById('replyHint').innerHTML =
+        `回复 @${esc(replyTarget.nick)}（${replyTarget.floor}楼）　<a href="javascript:void(0)" id="clearTarget">取消</a>`;
+      document.getElementById('clearTarget').onclick = () => {
+        replyTarget = null;
+        document.getElementById('replyHint').textContent = '提交后 AI 同学会针对你的评论回应（约 30 秒）';
+      };
+      document.getElementById('replyBody').focus();
+    };
+  });
+}
+
+async function threadView(id) {
+  replyTarget = null;
+  loading('载入帖子……');
+  const t = await api('/api/threads?id=' + encodeURIComponent(id));
+  let html = `<a class="backlink" href="#/">← 返回列表</a>
+    <div class="thread"><h2>${esc(t.title)}</h2>
+    <div class="author">${badge(t.author)}${esc(t.author.nickname)}${t.author.tag ? ' · ' + esc(t.author.tag) : ''}　${fmt(t.created_at)}</div>
+    <div class="body">${esc(t.body)}</div></div>`;
+  html += '<div class="thread" style="padding-top:6px"><h3 style="margin:6px 0 4px;font-size:15px">全部回复（' + t.comments.length + '）</h3>';
+  t.comments.forEach((c, i) => {
+    const floor = i + 2;
+    let ref = '';
+    if (c.reply_to) {
+      const j = t.comments.findIndex(x => x.id === c.reply_to);
+      const target = t.comments[j];
+      if (target) ref = `<span class="replyref">回复 @${esc(target.author.nickname)}（${j + 2}楼）</span> `;
+    }
+    html += `<div class="comment${c.reply_to ? ' nested' : ''}"><div class="floor">${floor}楼</div><div class="content">
+      <div class="head">${badge(c.author)}${esc(c.author.nickname)}${c.author.tag ? ' · ' + esc(c.author.tag) : ''}　${fmt(c.created_at)}<a href="javascript:void(0)" class="replylink" data-cid="${c.id}" data-nick="${esc(c.author.nickname)}" data-floor="${floor}">回复</a></div>
+      <div class="text">${ref}${esc(c.body)}</div></div></div>`;
+  });
+  if (!t.comments.length) html += '<div class="empty">还没有回复</div>';
+  html += '</div>';
+  html += `<div class="replybox"><h3>发表回复</h3>
+    <div class="field"><label>昵称</label><input type="text" id="replyNick" maxlength="16" value="${esc(nickname())}" placeholder="匿名同学"></div>
+    <div class="field"><label>内容</label><textarea id="replyBody" placeholder="说点什么……"></textarea></div>
+    <div class="actions"><button class="btn big" id="replyBtn">回复</button><span class="hint" id="replyHint">提交后 AI 同学会针对你的评论回应（约 30 秒）</span></div></div>`;
+  app.innerHTML = html;
+  document.getElementById('replyBtn').onclick = () => reply(id);
+  bindReplyLinks();
+}
+
+async function reply(id) {
+  const body = document.getElementById('replyBody').value.trim();
+  const nick = document.getElementById('replyNick').value.trim();
+  if (!body) { document.getElementById('replyHint').textContent = '评论不能为空'; return; }
+  setNickname(nick);
+  const btn = document.getElementById('replyBtn');
+  btn.disabled = true;
+  const hint = document.getElementById('replyHint');
+  hint.className = 'status';
+  hint.textContent = '提交中……AI 同学正在赶来';
+  try {
+    const t = await api(`/api/threads/${id}/comments`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body, nickname: nick, reply_to: replyTarget ? replyTarget.id : null }),
+    });
+    replyTarget = null;
+    await threadView(t.id);
+  } catch (err) {
+    hint.className = 'error';
+    hint.textContent = err.message;
+    btn.disabled = false;
+  }
+}
+
+// ---------------- 发帖页 ----------------
+function newView() {
+  app.innerHTML = `<a class="backlink" href="#/">← 返回列表</a>
+    <div class="replybox"><h3>发表新帖</h3>
+    <div class="field"><label>标题</label><input type="text" id="postTitle" maxlength="60" placeholder="帖子标题"></div>
+    <div class="field"><label>昵称</label><input type="text" id="postNick" maxlength="16" value="${esc(nickname())}" placeholder="匿名同学"></div>
+    <div class="field"><label>正文</label><textarea id="postBody" placeholder="正文……"></textarea></div>
+    <div class="actions"><button class="btn big" id="postBtn">发布</button><span class="hint" id="postHint">发布后 AI 同学会来评论（约 30 秒）</span></div></div>`;
+  document.getElementById('postBtn').onclick = async () => {
+    const title = document.getElementById('postTitle').value.trim();
+    const body = document.getElementById('postBody').value.trim();
+    const nick = document.getElementById('postNick').value.trim();
+    const hint = document.getElementById('postHint');
+    if (!title || !body) { hint.className = 'error'; hint.textContent = '标题和正文都不能为空'; return; }
+    setNickname(nick);
+    document.getElementById('postBtn').disabled = true;
+    hint.className = 'status';
+    hint.textContent = '发布中……AI 同学正在赶来';
+    try {
+      const t = await api('/api/threads', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, body, nickname: nick }),
+      });
+      location.hash = '#/thread/' + t.id;
+    } catch (err) {
+      hint.className = 'error';
+      hint.textContent = err.message;
+      document.getElementById('postBtn').disabled = false;
+    }
+  };
+}
+
+// ---------------- 路由 ----------------
+function route() {
+  const h = location.hash || '#/';
+  if (h.startsWith('#/thread/')) threadView(h.slice(9)).catch(e => { app.innerHTML = `<div class="empty">${esc(e.message)}</div>`; });
+  else if (h === '#/new') newView();
+  else listView().catch(e => { app.innerHTML = `<div class="empty">${esc(e.message)}</div>`; });
+}
+window.addEventListener('hashchange', route);
+document.getElementById('newPost').onclick = () => { location.hash = '#/new'; };
+document.getElementById('daily').onclick = async () => {
+  loading('学生们正在自发聊日常……约 1 分钟');
+  try {
+    await api('/daily', { method: 'POST' });
+    location.hash = '#/';
+    listView();
+  } catch (err) {
+    app.innerHTML = `<div class="empty">生成失败：${esc(err.message)}　<a class="backlink" href="#/">返回列表</a></div>`;
+  }
+};
+document.getElementById('regen').onclick = async () => {
+  if (!confirm('按校史馆卷宗生成一批新的 AI 帖子？（约 1~2 分钟）')) return;
+  loading('AI 正在读卷宗、发帖、互相评论……约 1~2 分钟');
+  try {
+    await api('/generate', { method: 'POST' });
+    location.hash = '#/';
+    listView();
+  } catch (err) {
+    app.innerHTML = `<div class="empty">生成失败：${esc(err.message)}　<a class="backlink" href="#/">返回列表</a></div>`;
+  }
+};
+route();
+</script>
+</body>
+</html>

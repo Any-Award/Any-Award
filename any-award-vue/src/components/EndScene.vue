@@ -1,0 +1,4 @@
+<script setup>
+defineProps({candidate:Object,candidates:Array,player:String});defineEmits(['review','restart']);
+</script>
+<template><div class="end-layout"><article class="paper end-paper"><div class="redhead">评审归档</div><div class="docno">校奖发〔2026〕001号 · 结案</div><h2>有志少年奖<br>本届试点评选记录</h2><p>本轮审阅报名材料4份，确定答辩人选3名，每人完成一轮问答。</p><p>答辩名单：{{ candidates.map(c=>c.name).join('、') }}。</p><p>获奖者：{{ candidate.name }}。</p><p>荣誉证书已由{{ player }}亲手交付。</p><div class="signoff">奖励执行委员会<br>{{ player }}　核定</div><div class="stamp">已归档</div></article><section class="end-copy"><div class="eyebrow">第四幕　／　颁奖完成</div><h2>证书递出去了。</h2><p>{{ candidate.name }}接过证书。<br>你签下的名字，成为了本届的获奖名单。</p><p>本次原型到此结束。<br>不展开余波、总结会议和终章。</p><div class="actions"><button data-action="view-review" @click="$emit('review')">回看报名材料</button><button class="primary" data-action="restart" @click="$emit('restart')">重新体验</button></div><p class="serial">LOCAL SCRIPT / VUE 3 / NO AI CONNECTION</p></section></div></template>
