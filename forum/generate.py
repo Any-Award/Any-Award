@@ -25,7 +25,7 @@ from openai import OpenAI
 
 from render import render
 import memory
-from lexicon import BANNED_COOC, BANNED_WORDS, banned_prompt_line
+from lexicon import BANNED_COOC, BANNED_FRAMES, BANNED_WORDS, COMPILED_FRAMES, banned_prompt_line
 
 HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parent
@@ -58,14 +58,16 @@ def humanize_block() -> str:
     return "\n".join([
         "【去AI味·硬清单（命中即失败，全文搜索必须为0）】",
         banned_prompt_line(),
-        "禁用句式：『不是A，而是B』翻案句、『不是A…不是B…是C』否定铺垫、『X。就是这样。』碎片装深沉、自问自答、排比对仗。",
+        "禁用句式：『不是A，而是B』及一切翻案变体（『不是A，是B』『不叫A，叫B』『与其说A不如说B』『表面A实则B』『以为是A，结果B』『退一步讲』）、让步表态（『话虽如此』『这个我认，但…』『各有利弊』）、『X。就是这样。』碎片装深沉、自问自答、排比对仗。",
         "禁用标点：用冒号引出列举或解释、破折号——做停顿、双引号\"\"强调概念（要强调用「」或直接写）。",
         "禁用格式：加粗、小标题、bullet 罗列、编号论证（除非该人设的说话样板里就这么说）。",
         "【effort 分布】像真论坛：大部分评论是低 effort，一个字到一句话（草/蹲/+1/笑死/插眼/确实/啊这），四五条里才有一条稍微长点的看法。允许敷衍、词穷、答非所问、说一半不说了、纯表情。\n"
         "【短】能一句话说完就别写两句，能几个字就别写一句。真人灌水很短，长篇大论是 AI 味。",
         "【最高原则】最像，而不是最好。宁可说得烂、说得短、说得跑题，也不要说得正确又完整。别端着，别升华，别总结。",
-        "【对照】AI味（禁止）：『我认为这个评选存在三个问题：首先…其次…最后…综上所述…』",
-        "真人味（学这个）：『不是 我室友天天泡实验室结果连入围都没有 他回来一句话没说 我都不敢问…这奖到底看啥啊』『草』『蹲一个 顺便二食堂还有糖醋里脊吗』",
+        "【对照】AI味（禁止）：『首先…其次…最后…综上所述』式分点总结腔；『我认，但…』式先让步再翻案；结尾拔高升华。",
+        "真人味（学这个）：『?? 我室友天天泡实验室结果连入围都没有 他回来一句话没说 我都不敢问…这奖到底看啥啊』『草』『蹲一个 顺便二食堂还有糖醋里脊吗』",
+        "反对就这么说（学这个）：『标准里服务时长占30%这条谁定的 站出来』『你这数四舍五入也太狠了』——直接指具体处，不铺垫、不先夸。",
+        "同意就这么说（学这个）：『两百人次是真的 我一学期问不了十次』——只接一个具体数，别总结、别升华。",
         "【盖楼范例】（reply_to 这样用，要有人互相回复，别都只回楼主）：",
         "  梗先知（reply_to=楼主）：草 这也行",
         "  老蔡不姓蔡（reply_to=梗先知）：等下 我算算",
@@ -183,34 +185,39 @@ def pick_responders(personas: list, thread: dict, target_comment: dict | None = 
     return _weighted_sample(pool, weights, min(n, len(pool)))
 
 
-# 微情境动机池：让话从具体处境长出来，而非"写个有趣帖子"（斯坦福情境驱动）
+# 微情境动机池：让话从具体处境长出来，而非"写个有趣帖子"（斯坦福情境驱动）。
+# 刻意全部是"处境/动作"、没有抽象立场——「你不太同意楼主」这类态度型动机是
+# 让步句式的温床：模型拿到立场却不知道不同意什么，只能套预训练里的让步模板。
 _MOTIVES = [
-    "你正好经历过类似的事，想说两句",
-    "你不太同意楼主，想抬个杠",
+    "你正好经历过类似的事，想说说你那次后来怎么样了",
+    "楼主有个说法跟你自己碰到的情况对不上，你想把你那点情况甩出来",
     "你觉得这事挺好笑，想乐一下",
     "你只是想随手水一句，懒得长篇大论",
-    "你想起自己的一件事，顺嘴一提",
+    "你想起自己的一件小事，顺嘴一提",
     "你懒得回，但忍不住接个话",
-    "你有点感同身受，想说点实在的",
+    "你有个具体的小问题想问楼主或楼里人",
 ]
 
 # 接其他评论者的话（形成对话链，而非都回楼主复读关键词）
+# 接其他评论者的话（形成对话链，而非都回楼主复读关键词）。
+# 旧版 7 条里 3 条是站队/补充——57% 概率抽到表态动作，「先夸一句…我认…但」
+# 三连就是这么被结构性地生产出来的。现在全是处境化动作。
 _REPLY_MOTIVES = [
-    "你不同意他说的，想反驳一句",
-    "你挺同意他，再补一个相关的点",
+    "他说的跟你经历的对不上，你直接说你那次的情况，不用客气",
+    "他说到你心坎里了，你只想补一句自己身上对得上的事",
     "你接着他的话往下说",
-    "你觉得他说得不对，怼一下",
     "你被他逗乐了，接个梗",
     "你想追问他一个细节",
-    "你帮他补充一个他没说的点",
+    "他话里有处细节你正好知道，顺嘴丢出来",
+    "你没细想，就是想应一声",
 ]
 
 # 开主题帖的动机（帖子侧微情境；评论侧见 _MOTIVES/_REPLY_MOTIVES）
 _THREAD_MOTIVES = [
     "你对这事有话要说，忍不住开一帖",
     "你想吐槽其中一点，专门发帖说一下",
-    "你想问问大家怎么看，顺带说说自己的情况",
-    "你注意到一个别人可能没注意的点，想指出来",
+    "你有个具体的小选择拿不准（选A还是B那种），想看看别人怎么选",
+    "你发现公开信息里有两个数对不上（或一处说不通），想把它们贴出来问",
     "这事跟你有切身关系，你有点上头",
     "你只是想凑个热闹，水一帖",
 ]
@@ -261,8 +268,10 @@ def _violations(body: str, budget: int | None, persona: dict | None = None) -> l
     for a, b in BANNED_COOC:
         if a in nb and b in nb:
             issues.append(f"『{a}…{b}』罗列腔")
-    if re.search(r"不是[^，。！？\n]{1,14}[，,][^。\n]{0,6}而是", nb):
-        issues.append("『不是A，而是B』翻案句")
+    for pat in COMPILED_FRAMES:
+        m = pat.search(nb)
+        if m:
+            issues.append(f"撞上禁用句式『{m.group(0)}』（让步/翻案/假权威类，换个说法直接讲）")
     if persona:
         hits = sum(nb.count(re.sub(r"\s+", "", ph))
                    for ph in (persona.get("catchphrase") or []) if ph)
@@ -300,18 +309,28 @@ def generate_one_comment(client, model, persona, rules, situation, motive, mem_b
         f"【你刚看到的】{situation}\n\n"
         f"【你此刻的动机】{motive}\n\n"
         + (f"【你自己的近期记忆】{mem_block}\n\n" if mem_block else "")
-        + "【先接住再开口】先在 point 字段用你的话概括对方（楼主或你回复的那条评论）在说什么（不超过20字，纯水贴可空），"
-        "再在 body 里接他的意思说你的反应——别复读他的原词。\n\n"
-        f"【字数硬约束】body 不超过 {budget} 字。你在手机上随手回一句，越短越像真人，别长篇大论、别解释、别铺垫。\n\n"
+        + (
+            "【钩子】先在 point 字段填对方这句话里你唯一想接的那个词/数字/事实（不超过10字，"
+            "没有想接的就空字符串）。body 直接从你的事、你的问题、你的梗开始——"
+            "第一句不许是评价对方的话（不许「说得对/有道理/我认/确实，但…」这类开场）。\n\n"
+            if budget > 15
+            else "【直接说】短回复不需要任何铺垫，直接从你的事、你的问题、你的梗开始——"
+                 "第一句不许是评价对方的话（不许「说得对/有道理/我认/确实，但…」这类开场）。\n\n"
+        )
+        + f"【字数硬约束】body 不超过 {budget} 字。你在手机上随手回一句，越短越像真人，别长篇大论、别解释、别铺垫。\n\n"
         f"以{persona['nickname']}的口吻回一句。可回复楼主（reply_to=楼主）"
         f"或上面某条评论者（reply_to=其昵称）；懒得回就 skip=true。\n"
-        f"输出 JSON：{{\"point\": \"...\", \"body\": \"...\", \"reply_to\": \"楼主或昵称或null\", \"skip\": false}}\n\n"
+        + (
+            '输出 JSON：{"point": "...", "body": "...", "reply_to": "楼主或昵称或null", "skip": false}\n\n'
+            if budget > 15
+            else '输出 JSON：{"body": "...", "reply_to": "楼主或昵称或null", "skip": false}\n\n'
+        )
         + post_block(include_reply_example=False)
     )
-    first = chat(client, model, system, user, temperature, max_tokens=200)
+    first = chat(client, model, system, user, temperature, max_tokens=256)
     issues = _violations(str(first.get("body", "")), budget, persona)
     if issues:
-        first = _rework(client, model, system, user, first, issues, temperature, 200)
+        first = _rework(client, model, system, user, first, issues, temperature, 256)
     return first
 
 
@@ -329,8 +348,27 @@ def _countdown(persona: dict) -> str:
         return ""
 
 
+def _insight_is_slop(text: str) -> bool:
+    """insight 金句/让步句过滤（动机见 refresh_one_state docstring）。帧命中、
+    破折号、格言式收束词一律丢弃——states 每天注回每一次生成，污染成本远大于
+    一条背景信息的收益，宁可错杀。"""
+    if not text:
+        return False
+    for pat in COMPILED_FRAMES:
+        if pat.search(text):
+            return True
+    if "——" in text or re.search(r"总会|无非|不过是|才是(真正|最)|更像", text):
+        return True
+    return False
+
+
 def refresh_one_state(client, model, persona, today) -> dict:
-    """每生一次调用：基于近期足迹重写 currently + 一条洞察（斯坦福 revise_identity + reflect-lite）。"""
+    """每生一次调用：基于近期足迹重写 currently + 一条具体近况（斯坦福 revise_identity + reflect-lite）。
+
+    insight 口径是「具体近况/心事」而非旧版「想明白的一件事」——后者是升华任务，
+    产出金句后经 persona_system 每天注回该角色的每一次生成，构成自污染回路
+    （「与其干等着生气，不如直接点名」就是这么进的 prompt）。生成后仍过
+    _insight_is_slop 过滤，宁可错杀：insight 只是背景补充，丢了不影响生成。"""
     nick = persona["nickname"]
     footprints = memory.footprints([nick], k=8, width=80)
     old = memory.get_state(nick) or {}
@@ -344,12 +382,16 @@ def refresh_one_state(client, model, persona, today) -> dict:
         f"你最近的论坛足迹：\n{footprints or '（最近没说话）'}\n"
         f"今天是 {today}。\n\n"
         f"输出 JSON：{{\"currently\": \"一句话当前状态/心情（具体、口语）\", "
-        f"\"insight\": \"你最近想明白的一件事（没有就空字符串）\"}}"
+        f"\"insight\": \"一条具体的近况或心事（要有具体的人/事/时间，像跟熟人随口说的；"
+        f"不许是感悟、总结、格言；没有就空字符串）\"}}"
     )
     r = chat(client, model, system, user, temperature=0.9, max_tokens=400)
+    insight = str(r.get("insight", "")).strip()
+    if _insight_is_slop(insight):
+        insight = ""
     return {
         "currently": str(r.get("currently", "")).strip() or old_currently,
-        "insight": str(r.get("insight", "")).strip(),
+        "insight": insight,
         "updated_at": today,
     }
 

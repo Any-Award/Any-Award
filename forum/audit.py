@@ -35,7 +35,7 @@ from datetime import date
 from pathlib import Path
 from statistics import median
 
-from lexicon import BANNED_COOC, BANNED_WORDS
+from lexicon import BANNED_COOC, BANNED_WORDS, COMPILED_FRAMES, DENSITY_WATCH, POSITIVE_MARKS
 
 HERE = Path(__file__).resolve().parent
 OUT_DIR = HERE / "output"
@@ -236,6 +236,26 @@ def audit(src: dict, phrases: dict[str, list[str]], actual: int | None) -> dict:
             for item in _scan_countdown(_norm(body), actual):
                 countdown.append({"who": who, **item})
 
+    # ---- 句型帧/密度控/人味正指标（第二轮：让步-表态-伪口语从审计盲区变可见）
+    frame_hits = []
+    density_cnt = {name: 0 for name in DENSITY_WATCH}
+    pos_cnt = {mk: 0 for mk in POSITIVE_MARKS}
+    n_chars = 0
+    for body, who in texts:
+        if not body:
+            continue
+        nb = _norm(body)
+        n_chars += len(nb)
+        for pat in COMPILED_FRAMES:
+            m = pat.search(nb)
+            if m:
+                frame_hits.append({"who": who, "frame": m.group(0), "quote": body[:40]})
+        for name, (words, _limit) in DENSITY_WATCH.items():
+            density_cnt[name] += sum(nb.count(_norm(w)) for w in words if w)
+        for mk in POSITIVE_MARKS:
+            pos_cnt[mk] += nb.count(mk)
+    density_per_k = {k: round(v / max(1, n_chars) * 1000, 2) for k, v in density_cnt.items()}
+
     # ---- 复读率（缺陷3）：仅楼中楼
     rates, worst = [], []
     for nick, body, t_title, t_body, pnick, pbody in ai_msgs:
@@ -289,6 +309,8 @@ def audit(src: dict, phrases: dict[str, list[str]], actual: int | None) -> dict:
         "stacks": stacks, "banned": banned_hits, "countdown": countdown,
         "rates": rates, "worst": worst, "title_parrot": title_parrot,
         "dist": dist, "counts": counts, "d2": d2, "actual_days": actual,
+        "frames": frame_hits, "density_cnt": density_cnt, "density_per_k": density_per_k,
+        "pos": pos_cnt, "n_chars": n_chars,
     }
 
 
@@ -316,6 +338,9 @@ def scorecard(r: dict) -> str:
         f" | 禁词 {len(r['banned'])}"
         f" | 倒计时违例 {sum(1 for c in r['countdown'] if not c['ok'])}/{len(r['countdown'])}"
         f" | 复读p90 {_p(r['rates'], 0.9):.2f} 嫌疑 {len(r['worst'])}",
+        f"   句型帧: ✗{len(r['frames'])}  密度控(次/千字): "
+        + " ".join(f"{k} {v}" for k, v in r["density_per_k"].items())
+        + "  人味符号: " + " ".join(f"{mk}{cnt}" for mk, cnt in r["pos"].items()),
     ]
     return "\n".join(lines)
 
@@ -326,7 +351,7 @@ def summary_row(name: str, r: dict) -> str:
     return (f"{name:<34} 帖{r['n_threads']:>2} 评{r['n_comments']:>3} "
             f"|≤15字{pct(d['le15']):>4} p50{d['p50']:>3} p90{d['p90']:>3} "
             f"|口癖{pct(r['density']):>4} 堆砌{len(r['stacks'])} "
-            f"|禁词{len(r['banned'])} 倒计时✗{cd_bad} "
+            f"|禁词{len(r['banned'])} 帧✗{len(r['frames'])} 倒计时✗{cd_bad} "
             f"|复读p90 {_p(r['rates'], 0.9):.2f} 嫌疑{len(r['worst'])}")
 
 
@@ -343,6 +368,17 @@ def detail(r: dict) -> str:
         out.append("禁词命中:")
         for b in r["banned"][:10]:
             out.append(f"  ✗ [{b['who']}] 『{b['word']}』「{b['quote']}」")
+    if r["frames"]:
+        out.append("句型帧命中（绝对禁档）:")
+        for f in r["frames"][:12]:
+            out.append(f"  ✗ [{f['who']}] 帧『{f['frame']}』「{f['quote']}」")
+    alarms = []
+    for name, (words, limit) in DENSITY_WATCH.items():
+        if r["density_cnt"][name] > limit:
+            alarms.append(f"{name} {r['density_cnt'][name]}次(阈值{limit}/份)")
+    out.append("密度控: " + ("⚠ " + "；".join(alarms) if alarms else "全部在阈值内")
+               + " ｜每千字: " + " ".join(f"{k} {v}" for k, v in r["density_per_k"].items()))
+    out.append("人味符号: " + " ".join(f"{mk}{cnt}" for mk, cnt in r["pos"].items()))
     if r["stacks"]:
         out.append("口癖堆砌（单条≥2处）:")
         for s in r["stacks"][:10]:
