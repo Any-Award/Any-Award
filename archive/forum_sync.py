@@ -69,6 +69,28 @@ def latest_per_award(museum_root: Path) -> list:
     return [(award, v[1], v[2]) for award, v in sorted(by_award.items())]
 
 
+def forum_mentions(forum_url: str, award: str) -> bool:
+    """论坛当前数据里是否还有该奖项的讨论（公告/帖/评正文含奖项名）。
+
+    论坛状态可能被重置（forum.json 回滚），而 synced 标记还在——这会让卷宗
+    永远不会被重喂。--status/--repair 用本函数核对标记与现实的漂移。"""
+    data = None
+    try:
+        with urllib.request.urlopen(forum_url.rstrip("/") + "/api/threads", timeout=30) as r:
+            data = json.loads(r.read().decode("utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        print(f"  拉取论坛数据失败：{exc}", file=sys.stderr)
+        return False
+    blob = []
+    ann = (data or {}).get("announcement") or {}
+    blob += [ann.get("title", ""), ann.get("body", "")]
+    for t in (data or {}).get("threads") or []:
+        blob += [t.get("title", ""), t.get("body", "")]
+        for c in t.get("comments") or []:
+            blob.append(c.get("body", ""))
+    return award in "\n".join(blob)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="论坛自动多卷驱动")
     ap.add_argument("--museum-root", default=str(HERE / "museum"))
@@ -76,9 +98,25 @@ def main() -> None:
     ap.add_argument("--news", type=int, default=0, help="追加 N 条新闻")
     ap.add_argument("--daily", action="store_true", help="追加日常帖")
     ap.add_argument("--all", action="store_true", help="重喂全部（忽略已同步记录）")
+    ap.add_argument("--status", action="store_true", help="只核对：标记已同步的奖项在论坛里是否真有讨论")
+    ap.add_argument("--repair", action="store_true", help="清除漂移标记（标记已同步但论坛已无讨论）并重喂")
     args = ap.parse_args()
 
     synced = load_synced()
+    if args.status or args.repair:
+        print(f"{'奖项':<14} {'论坛有讨论':<8} 标记  卷宗")
+        for award, vol_md, vol_dir in latest_per_award(Path(args.museum_root)):
+            key = str(vol_dir.relative_to(Path(args.museum_root)))
+            live = forum_mentions(args.forum_url, award)
+            marked = key in synced
+            print(f"{award:<14} {'✓' if live else '✗':^6}    {'是' if marked else '否':^4}  {vol_dir.name}")
+            if args.repair and marked and not live:
+                synced.discard(key)
+                print(f"  ↳ 清除漂移标记，本次重喂")
+        if args.repair:
+            save_synced(synced)
+        if not args.repair:
+            return
     fed = 0
     for award, vol_md, vol_dir in latest_per_award(Path(args.museum_root)):
         key = str(vol_dir.relative_to(Path(args.museum_root)))

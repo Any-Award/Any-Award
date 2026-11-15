@@ -470,11 +470,20 @@ def generate_threads(client, model, personas, rules, title, public_text, n_threa
     return {"announcement": announcement, "threads": threads}
 
 
+def _comment_crowd() -> int:
+    """每帖评论数分布：真论坛不是每帖都整齐 5-7 条——有冷帖也有热帖。
+    基线审计显示 26 份快照每帖恒为 5-7 条，是结构均匀性 AI 味（HANDOFF 缺陷4
+    的可量化版）。三角分布、冷帖常见、偶发独帖。"""
+    import random
+    return random.choices([1, 2, 3, 4, 5, 6, 7, 8],
+                          weights=[3, 7, 13, 18, 21, 18, 12, 8])[0]
+
+
 def generate_comments(client, model, personas, rules, thread, temperature) -> dict:
     """逐条独立生成。前两条必为顶楼（独立反应帖子），之后约一半顶楼一半楼中楼，
     形成"多人各自回帖子 + 部分楼中楼分支"的真实结构，而非单链。"""
     import random
-    responders = pick_responders(personas, thread, n=random.randint(5, 7))
+    responders = pick_responders(personas, thread, n=_comment_crowd())
     comments = []
     for i, p in enumerate(responders):
         go_lou = (i >= 2) and bool(comments) and random.random() < 0.55
