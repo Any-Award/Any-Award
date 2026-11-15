@@ -24,6 +24,7 @@ from openai import OpenAI
 
 from render import render
 import memory
+from lexicon import banned_prompt_line
 
 HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parent
@@ -72,7 +73,7 @@ def persona_card(p: dict) -> str:
 def humanize_block() -> str:
     return "\n".join([
         "【去AI味·硬清单（命中即失败，全文搜索必须为0）】",
-        "禁用词：综上所述/总的来说/总而言之/说白了/本质上/换句话说/值得注意的是/不难发现/众所周知/毋庸置疑/这意味着/由此可见/那么问题来了/你可能会问/首先其次最后/一方面另一方面/不得不说。",
+        banned_prompt_line(),
         "禁用句式：『不是A，而是B』翻案句、『不是A…不是B…是C』否定铺垫、『X。就是这样。』碎片装深沉、自问自答、排比对仗。",
         "禁用标点：用冒号引出列举或解释、破折号——做停顿、双引号\"\"强调概念（要强调用「」或直接写）。",
         "禁用格式：加粗、小标题、bullet 罗列、编号论证（除非该人设的说话样板里就这么说）。",
