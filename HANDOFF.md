@@ -138,3 +138,31 @@ python3 news/generate.py --count 2 --post-to-forum
 ---
 
 *接手建议：先读 `forum/personas.json` + `forum/generate.py` 的提示词组件（§3），跑论谈看现状；优先 P0（帖子 prompt 一致性 + 降口头禅）。*
+---
+
+## 10. 2026-11-15 下午修缮记录（Phase 0-3，已全部提交）
+
+> 接手 AI 追加：按 §7 待办推进后的现状。§6 缺陷对照本节末尾的状态表。
+
+**Phase 0 审计基建（缺陷 6 主体闭环）**
+- `forum/personas.json`：新增 `catchphrase` 字段（16 人迁移）；`style` 不再提及标志句——旧写法每次调用都把标志句发进 prompt，是堆砌的指令源。
+- `forum/lexicon.py`：禁词表单一事实源，`generate` 渲染与 `audit` 扫描同一口径（渲染文本与历史 prompt 逐字一致）。
+- `forum/audit.py`：纯标准库记分卡（口癖密度/堆砌/禁词/倒计时一致性/复读率/长度分布/每帖评论数/distinct-2）。改 prompt 前后各跑一遍，别再肉眼评。26 份快照基线已存于 output/。
+
+**Phase 1 帖子生成根治（缺陷 2 闭环）**
+- `generate_threads`/`generate_daily` 从批量拼盘拆为单角色单调用（`persona_system` 三路径共用），注入背景心情/考研倒计时/个人足迹——倒计时违例从基线 5 份快照 → 0。
+- `post_block` 删标志句例词枚举（如蚌/哥/…），它把全员口癖发给每个角色，是串味源。
+- 成本：每快照 +14~16 次调用（相对评论侧 20-30 次是小头）。
+
+**Phase 2 复读治理（缺陷 3 闭环）**
+- 评论 JSON 加 `point` 字段：先用 ≤20 字概括对方再写 body，结构上治"接词不接意"。
+- `_violations` 纯正则后验（禁词/共现/翻案句/标志句堆砌/超长）+ `_rework` 定向返工一次（失败保留原稿，防死循环）。
+- 实测：复读 p90 0.38→0.30，口癖密度 22%→7~14%，堆砌 2→0。
+
+**Phase 3 结构与状态**
+- 每帖评论数 `randint(5,7)` → 三角分布 1-8（基线显示每帖恒 5-7 条，是结构均匀性 AI 味，缺陷 4 量化闭环）。
+- `archive/forum_sync.py --status/--repair`：核对"标记已同步但论坛已无讨论"的漂移；实测暴露 002/003/005 三处（论坛重置后标记残留）。跑 `--repair` 会真实生成内容重喂，何时跑由人决定。
+
+**缺陷状态速查**：1→结构性修复；2→已修；3→已修；4→已量化+分布化；6→audit.py 已建（self-BLEU/盲测未做）；5/7/8 未动（表达学习/示例扩充/完整反思，仍按 §7 P1-P2 顺序）。
+
+**环境备忘**：沙箱 shell 的 `PYTHONUTF8=1` 会让 CPython 3.14 的 venv 探测失效（import dotenv 失败）；调 `Any-Award-Backend/.venv/bin/python` 用 `env -u PYTHONUTF8`。用户终端无此变量，服务不受影响。
