@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -24,7 +25,7 @@ from openai import OpenAI
 
 from render import render
 import memory
-from lexicon import banned_prompt_line
+from lexicon import BANNED_COOC, BANNED_WORDS, banned_prompt_line
 
 HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parent
@@ -88,8 +89,7 @@ def post_block(include_reply_example: bool = True) -> str:
         "【单角色口吻】每条只以对应昵称的口吻写，串味（像别的角色或像 AI 客服）即失败。\n"
         "【禁修辞弧】不要『个人经历→感悟升华→安慰/号召』的闭环，不要结尾给人生道理或安慰号召；话可以说一半、没结论、跑题。\n"
         "【禁金句】不要工整对仗的格言警句（如『匿名本来让人敢说，可也让人敢伤人』这种）。\n"
-        "【口头禅是稀有品】标志句十条里最多冒一两次，绝大多数时候你就是普通说话；一条里堆好几个标志句=严重 AI 味。标志句不是你的身份。\n"
-        "【接话不接词】回应别人时接他的意思，别复读他或楼主的原词；从你自己的经历和立场出发说。"
+        "【口头禅是稀有品】标志句十条里最多冒一两次，一条里堆好几个=严重 AI 味。标志句不是你的身份，绝大多数时候你就是正常说话。"
     )
     return base + "\n" + extra
 
@@ -248,6 +248,45 @@ def _length_budget() -> int:
     return random.randint(41, 80)       # 稍长：一小段看法
 
 
+def _violations(body: str, budget: int | None, persona: dict | None = None) -> list[str]:
+    """生成后定向检查（mk49 式双保险，纯正则、零额外成本）。命中才触发一次
+    返工重试；词表与 humanize_block 同源于 lexicon，改一处两边同步。
+    只做正则可判的事：书面禁词/罗列共现/翻案句/标志句堆砌/超预算——
+    不可正则化的（修辞弧、金句）不在此查，避免误伤。"""
+    issues: list[str] = []
+    nb = re.sub(r"\s+", "", str(body))
+    for w in BANNED_WORDS:
+        if w in nb:
+            issues.append(f"冒出书面腔禁词『{w}』")
+    for a, b in BANNED_COOC:
+        if a in nb and b in nb:
+            issues.append(f"『{a}…{b}』罗列腔")
+    if re.search(r"不是[^，。！？\n]{1,14}[，,][^。\n]{0,6}而是", nb):
+        issues.append("『不是A，而是B』翻案句")
+    if persona:
+        hits = sum(nb.count(re.sub(r"\s+", "", ph))
+                   for ph in (persona.get("catchphrase") or []) if ph)
+        if hits >= 2:
+            issues.append("一条里堆了多个标志句（标志句一条最多冒一个）")
+    if budget is not None and len(nb) > max(budget + 20, int(budget * 1.6)):
+        issues.append(f"超长（{len(nb)}字，预算约{budget}字），砍到一半")
+    return issues
+
+
+def _rework(client, model, system: str, user: str, first: dict,
+            issues: list[str], temperature: float, max_tokens: int) -> dict:
+    """带违规说明的定向重试；只试一次，失败保留原稿（防死循环）。"""
+    retry_user = user.rstrip() + (
+        f"\n\n【返工】你刚才那条：「{str(first.get('body', ''))[:60]}」\n"
+        f"问题：{'；'.join(issues)}。重写一条，格式同上，更短更随意。"
+    )
+    try:
+        second = chat(client, model, system, retry_user, temperature, max_tokens)
+    except (json.JSONDecodeError, KeyError):
+        return first
+    return second if str(second.get("body", "")).strip() else first
+
+
 def generate_one_comment(client, model, persona, rules, situation, motive, mem_block, temperature, budget=None) -> dict:
     """单角色单调用：只喂该角色的情境 + 自己的记忆，打破"一个编剧写群戏"。
     映射斯坦福 v2 一次一句 + 情境模板 + 信息不对称。"""
@@ -261,15 +300,19 @@ def generate_one_comment(client, model, persona, rules, situation, motive, mem_b
         f"【你刚看到的】{situation}\n\n"
         f"【你此刻的动机】{motive}\n\n"
         + (f"【你自己的近期记忆】{mem_block}\n\n" if mem_block else "")
-        + "【信息不对称】你只知道上面这些和你自己的记忆，不知道别人没公开的想法。\n\n"
-        "【就事论事】紧扣对方这句话的具体内容来回应，别硬拐去说自己的事、别复读原词；你的背景心情只是底色，不必每条都提。\n\n"
-        f"【字数硬约束】这条回复不超过 {budget} 字。你在手机上随手回一句，越短越像真人，别长篇大论、别解释、别铺垫。\n\n"
+        + "【先接住再开口】先在 point 字段用你的话概括对方（楼主或你回复的那条评论）在说什么（不超过20字，纯水贴可空），"
+        "再在 body 里接他的意思说你的反应——别复读他的原词。\n\n"
+        f"【字数硬约束】body 不超过 {budget} 字。你在手机上随手回一句，越短越像真人，别长篇大论、别解释、别铺垫。\n\n"
         f"以{persona['nickname']}的口吻回一句。可回复楼主（reply_to=楼主）"
         f"或上面某条评论者（reply_to=其昵称）；懒得回就 skip=true。\n"
-        f"输出 JSON：{{\"body\": \"...\", \"reply_to\": \"楼主或昵称或null\", \"skip\": false}}\n\n"
+        f"输出 JSON：{{\"point\": \"...\", \"body\": \"...\", \"reply_to\": \"楼主或昵称或null\", \"skip\": false}}\n\n"
         + post_block(include_reply_example=False)
     )
-    return chat(client, model, system, user, temperature, max_tokens=200)
+    first = chat(client, model, system, user, temperature, max_tokens=200)
+    issues = _violations(str(first.get("body", "")), budget, persona)
+    if issues:
+        first = _rework(client, model, system, user, first, issues, temperature, 200)
+    return first
 
 
 def _countdown(persona: dict) -> str:
@@ -390,7 +433,12 @@ def generate_one_thread(client, model, persona, rules, title, public_text,
         "标题像随手起的，可以不完整；正文不超过 120 字，像真人在手机上打的，别写成通稿。\n\n"
         + post_block(include_reply_example=False)
     )
-    return chat(client, model, persona_system(persona, rules), user, temperature, max_tokens=300)
+    system = persona_system(persona, rules)
+    first = chat(client, model, system, user, temperature, max_tokens=300)
+    issues = _violations(str(first.get("body", "")), 120, persona)
+    if issues:
+        first = _rework(client, model, system, user, first, issues, temperature, 300)
+    return first
 
 
 def generate_threads(client, model, personas, rules, title, public_text, n_threads, temperature) -> dict:
@@ -501,7 +549,12 @@ def generate_one_daily(client, model, persona, rules, hour, taken_titles, temper
         "不要编造任何评选结果、奖项或新闻事实。标题像随手起的；正文不超过 100 字。\n\n"
         + post_block(include_reply_example=False)
     )
-    return chat(client, model, persona_system(persona, rules), user, temperature, max_tokens=300)
+    system = persona_system(persona, rules)
+    first = chat(client, model, system, user, temperature, max_tokens=300)
+    issues = _violations(str(first.get("body", "")), 100, persona)
+    if issues:
+        first = _rework(client, model, system, user, first, issues, temperature, 300)
+    return first
 
 
 def generate_daily(client, model, personas, rules, temperature, n_threads=3) -> dict:
