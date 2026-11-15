@@ -76,7 +76,8 @@ def humanize_block() -> str:
         "禁用句式：『不是A，而是B』翻案句、『不是A…不是B…是C』否定铺垫、『X。就是这样。』碎片装深沉、自问自答、排比对仗。",
         "禁用标点：用冒号引出列举或解释、破折号——做停顿、双引号\"\"强调概念（要强调用「」或直接写）。",
         "禁用格式：加粗、小标题、bullet 罗列、编号论证（除非该人设的说话样板里就这么说）。",
-        "【effort 分布】像真论坛：大部分评论是低 effort，一个字到一句话（草/蹲/+1/笑死/插眼/确实/啊这），四五条里才有一条稍微长点的看法。允许敷衍、词穷、答非所问、说一半不说了、纯表情。",
+        "【effort 分布】像真论坛：大部分评论是低 effort，一个字到一句话（草/蹲/+1/笑死/插眼/确实/啊这），四五条里才有一条稍微长点的看法。允许敷衍、词穷、答非所问、说一半不说了、纯表情。\n"
+        "【短】能一句话说完就别写两句，能几个字就别写一句。真人灌水很短，长篇大论是 AI 味。",
         "【最高原则】最像，而不是最好。宁可说得烂、说得短、说得跑题，也不要说得正确又完整。别端着，别升华，别总结。",
         "【对照】AI味（禁止）：『我认为这个评选存在三个问题：首先…其次…最后…综上所述…』",
         "真人味（学这个）：『不是 我室友天天泡实验室结果连入围都没有 他回来一句话没说 我都不敢问…这奖到底看啥啊』『草』『蹲一个 顺便二食堂还有糖醋里脊吗』",
@@ -103,7 +104,8 @@ def post_block(include_reply_example: bool = True) -> str:
         "【单角色口吻】每条只以对应昵称的口吻写，串味（像别的角色或像 AI 客服）即失败。\n"
         "【禁修辞弧】不要『个人经历→感悟升华→安慰/号召』的闭环，不要结尾给人生道理或安慰号召；话可以说一半、没结论、跑题。\n"
         "【禁金句】不要工整对仗的格言警句（如『匿名本来让人敢说，可也让人敢伤人』这种）。\n"
-        "【口头禅克制】标志句/口头禅偶尔用，不是每条必甩；大部分时候就像普通人随口说话。"
+        "【口头禅是稀有品】你的标志句（如蚌/哥/先夸一句/没数我不说）十条里最多冒一两次，绝大多数时候就是普通说话；一条里堆好几个标志句=严重 AI 味。标志句不是你的身份。\n"
+        "【接话不接词】回应别人时接他的意思，别复读他或楼主的原词；从你自己的经历和立场出发说。"
     )
     return base + "\n" + extra
 
@@ -178,6 +180,17 @@ _MOTIVES = [
     "你有点感同身受，想说点实在的",
 ]
 
+# 接其他评论者的话（形成对话链，而非都回楼主复读关键词）
+_REPLY_MOTIVES = [
+    "你不同意他说的，想反驳一句",
+    "你挺同意他，再补一个相关的点",
+    "你接着他的话往下说",
+    "你觉得他说得不对，怼一下",
+    "你被他逗乐了，接个梗",
+    "你想追问他一个细节",
+    "你帮他补充一个他没说的点",
+]
+
 
 def comment_situation(thread: dict, prior_comments: list) -> tuple:
     """构造"你刚看到的"微情境：本帖 + 已生成评论（供楼中楼）+ 随机动机。"""
@@ -191,9 +204,22 @@ def comment_situation(thread: dict, prior_comments: list) -> tuple:
     return saw, random.choice(_MOTIVES)
 
 
-def generate_one_comment(client, model, persona, rules, situation, motive, mem_block, temperature) -> dict:
+def _length_budget() -> int:
+    """结构化字数预算：多数极短，少数短，偶尔稍长（真论坛的回复长度分布）。"""
+    import random
+    r = random.random()
+    if r < 0.6:
+        return random.randint(5, 15)    # 极短：草/笑死/蹲/确实
+    if r < 0.9:
+        return random.randint(16, 40)   # 短：一句话
+    return random.randint(41, 80)       # 稍长：一小段看法
+
+
+def generate_one_comment(client, model, persona, rules, situation, motive, mem_block, temperature, budget=None) -> dict:
     """单角色单调用：只喂该角色的情境 + 自己的记忆，打破"一个编剧写群戏"。
     映射斯坦福 v2 一次一句 + 情境模板 + 信息不对称。"""
+    if budget is None:
+        budget = _length_budget()
     examples = persona.get("examples") or []
     import random
     sample = random.sample(examples, min(4, len(examples))) if examples else []
@@ -201,12 +227,12 @@ def generate_one_comment(client, model, persona, rules, situation, motive, mem_b
     state = memory.get_state(persona["nickname"]) or {}
     state_lines = ""
     if state.get("currently"):
-        state_lines += f"你当前的状态：{state['currently']}\n"
+        state_lines += f"（背景心情：你最近{state['currently']}。这只是底色，不是每条都要提，别硬拐到它。）\n"
     cd = _countdown(persona)
     if cd:
         state_lines += cd + "\n"
     if state.get("insight"):
-        state_lines += f"你最近想明白的事：{state['insight']}\n"
+        state_lines += f"（你最近想明白的事：{state['insight']}，相关时才用）\n"
     system = (
         f"你就是{persona['nickname']}（{persona['tag']}）。{persona['personality']}\n"
         + (state_lines + "\n" if state_lines else "")
@@ -220,12 +246,14 @@ def generate_one_comment(client, model, persona, rules, situation, motive, mem_b
         f"【你此刻的动机】{motive}\n\n"
         + (f"【你自己的近期记忆】{mem_block}\n\n" if mem_block else "")
         + "【信息不对称】你只知道上面这些和你自己的记忆，不知道别人没公开的想法。\n\n"
-        f"以{persona['nickname']}的口吻说一句话或一小段。可回复楼主（reply_to=楼主）"
+        "【就事论事】紧扣对方这句话的具体内容来回应，别硬拐去说自己的事、别复读原词；你的背景心情只是底色，不必每条都提。\n\n"
+        f"【字数硬约束】这条回复不超过 {budget} 字。你在手机上随手回一句，越短越像真人，别长篇大论、别解释、别铺垫。\n\n"
+        f"以{persona['nickname']}的口吻回一句。可回复楼主（reply_to=楼主）"
         f"或上面某条评论者（reply_to=其昵称）；懒得回就 skip=true。\n"
         f"输出 JSON：{{\"body\": \"...\", \"reply_to\": \"楼主或昵称或null\", \"skip\": false}}\n\n"
         + post_block(include_reply_example=False)
     )
-    return chat(client, model, system, user, temperature, max_tokens=800)
+    return chat(client, model, system, user, temperature, max_tokens=200)
 
 
 def _countdown(persona: dict) -> str:
@@ -327,7 +355,7 @@ def generate_threads(client, model, personas, rules, title, public_text, n_threa
         f"1. 以『论坛管理员』身份写一个置顶公告帖（转述公开信息中的评选结果，语气官方、克制、简短）；\n"
         f"2. 写 {len(posters)} 个主题帖，按上述人设顺序每帖对应一位发帖人（用其昵称），"
         f"态度和文风必须符合人设，且彼此不同；可延续其近期足迹里的梗和话题，但不要与之前的自己矛盾；"
-        f"帖子要像真的帖子：有标题，正文长短不一。\n\n"
+        f"帖子要像真的帖子：有标题，正文控制在 120 字以内，像随手发的，别写长文。\n\n"
         f"输出 JSON：{{\"announcement\": {{\"title\": \"...\", \"body\": \"...\"}}, "
         f"\"threads\": [{{\"nickname\": \"人设昵称\", \"title\": \"...\", \"body\": \"...\"}}]}}\n\n"
         + post_block(include_reply_example=False)
@@ -336,13 +364,22 @@ def generate_threads(client, model, personas, rules, title, public_text, n_threa
 
 
 def generate_comments(client, model, personas, rules, thread, temperature) -> dict:
-    """逐条独立生成：每个回应者单独一次调用，只喂其情境+自己的记忆。
-    回应门控（pick_responders 抽样 3~5 人）+ 单条可 skip（潜水）。后条可见前条以形成楼中楼。"""
+    """逐条独立生成。前两条必为顶楼（独立反应帖子），之后约一半顶楼一半楼中楼，
+    形成"多人各自回帖子 + 部分楼中楼分支"的真实结构，而非单链。"""
     import random
-    responders = pick_responders(personas, thread, n=random.randint(3, 5))
+    responders = pick_responders(personas, thread, n=random.randint(5, 7))
     comments = []
-    for p in responders:
-        situation, motive = comment_situation(thread, comments)
+    for i, p in enumerate(responders):
+        go_lou = (i >= 2) and bool(comments) and random.random() < 0.55
+        if go_lou:
+            target = random.choice(comments[-4:])
+            situation = (f"帖子《{thread.get('title', '')}》（楼主说：{str(thread.get('body', ''))[:80]}）的评论区。\n"
+                         f"你刚看到 {target['nickname']} 说：「{target['body']}」")
+            motive = random.choice(_REPLY_MOTIVES)
+            forced_reply = target["nickname"]
+        else:
+            situation, motive = comment_situation(thread, [])  # 只看帖子，独立反应
+            forced_reply = None
         mem_block = memory.footprints([p["nickname"]], k=3, width=50)
         try:
             r = generate_one_comment(client, model, p, rules, situation, motive, mem_block, temperature)
@@ -353,7 +390,8 @@ def generate_comments(client, model, personas, rules, thread, temperature) -> di
         body = str(r.get("body", "")).strip()
         if not body:
             continue
-        comments.append({"nickname": p["nickname"], "body": body, "reply_to": r.get("reply_to") or "楼主"})
+        reply_to = forced_reply if forced_reply else (r.get("reply_to") or "楼主")
+        comments.append({"nickname": p["nickname"], "body": body, "reply_to": reply_to})
     return {"comments": comments}
 
 
@@ -408,7 +446,7 @@ def generate_daily(client, model, personas, rules, temperature, n_threads=3) -> 
         f"任务：写 {len(posters)} 个日常帖，按上述人设顺序每帖对应一位发帖人。"
         f"话题限于校园日常：食堂、考试、宿舍、社团、天气、通勤、最近的生活小事、各自的近况。"
         f"不要编造任何评选结果、奖项或新闻事实；可以延续各自近期足迹里的梗、话题和关系。"
-        f"帖子要像真人随手发的：有标题，正文长短不一，符合人设的口癖和出没场景。\n\n"
+        f"帖子要像真人随手发的：有标题，正文控制在 100 字以内，符合人设的口癖和出没场景，别写长文。\n\n"
         f"输出 JSON：{{\"threads\": [{{\"nickname\": \"人设昵称\", \"title\": \"...\", \"body\": \"...\"}}]}}\n\n"
         + post_block(include_reply_example=False)
     )
