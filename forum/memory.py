@@ -27,13 +27,13 @@ _IMPORTANT_WORDS = (
 
 
 def _importance(item: dict) -> int:
-    score = 5 if item.get("kind") == "thread" else 2
+    base = {"thread": 5, "received": 3}.get(item.get("kind"), 2)
     body = str(item.get("body", ""))
-    score += min(3, len(body) // 60)        # 长正文 +≤3
-    if item.get("reply_to_nick"):
-        score += 1                          # 有互动对象
+    score = base + min(3, len(body) // 60)     # 长正文 +≤3
+    if item.get("reply_to_nick") or item.get("from"):
+        score += 1                             # 有互动对象
     if any(w in body for w in _IMPORTANT_WORDS):
-        score += 2                          # 命中情感/重大词
+        score += 2                             # 命中情感/重大词
     return min(10, score)
 
 
@@ -65,13 +65,18 @@ def append(nickname: str, item: dict) -> None:
 
 
 def record_comment(thread: dict, comment: dict) -> None:
-    """把一条评论写进其 AI 作者的记忆（玩家评论不入库）。"""
+    """把一条评论写进作者与互动对象的记忆（玩家评论不入库）。
+
+    第三轮新增：被回复者（或楼主）也记一条 kind=received 的见闻记忆——
+    修复「A 怼了 B，只有 A 记得」的单向失忆（基线实测 122 对互动 59% 单向，
+    人际冲突在认知层从未真正发生）。"""
     a = comment.get("author") or {}
     if a.get("kind") != "ai":
         return
-    target_nick = None
+    target, target_nick = None, None
     for c in thread.get("comments") or []:
         if c.get("id") == comment.get("reply_to"):
+            target = c
             target_nick = (c.get("author") or {}).get("nickname")
             break
     append(a.get("nickname", ""), {
@@ -82,6 +87,22 @@ def record_comment(thread: dict, comment: dict) -> None:
         "body": comment.get("body", ""),
         "reply_to_nick": target_nick,
     })
+    # 见闻记忆：回复对象优先，回复楼主则记楼主
+    if target is None:
+        op = thread.get("author") or {}
+        target = {"author": op, "body": thread.get("body", "")} if op.get("kind") == "ai" else None
+        target_nick = op.get("nickname") if target else None
+    ta = (target or {}).get("author") or {}
+    if target and ta.get("kind") == "ai" and target_nick and target_nick != a.get("nickname"):
+        append(target_nick, {
+            "at": comment.get("created_at", ""),
+            "kind": "received",
+            "thread_id": thread.get("id", ""),
+            "thread_title": thread.get("title", ""),
+            "body": comment.get("body", ""),
+            "reply_to_nick": None,
+            "from": a.get("nickname", ""),
+        })
 
 
 def record_thread(thread: dict) -> None:
@@ -100,16 +121,12 @@ def record_thread(thread: dict) -> None:
         record_comment(thread, c)
 
 
-def retrieve(nick: str, k: int = 5, query: str | None = None) -> list[dict]:
-    """加权检索（Stanford retrieve 的 recency + importance 两信号）。
+def _scored(items: list[dict]) -> list[tuple[float, int, dict]]:
+    """Stanford 两信号打分（recency+importance），互动条目加固定奖励，按分降序。
 
-    score = 0.5*norm(0.99^距最新条数) + 3*norm(importance/10)，取 top-k 按时间序返回。
-    第三信号 relevance（embedding）留待 P1；query 参数预留，当前忽略。
-    旧条目无 importance 字段时默认 3，无需迁移。
-    """
-    items = recent(nick, KEEP)
-    if not items:
-        return []
+    互动 = 我回复过谁（reply_to_nick）/ 谁对我说过话（kind=received, from）。
+    基线实测纯分数排序下 45 条注入 43 条是自己的帖——互动记忆被系统性埋没，
+    「延续上次吵架」在结构上不可能，故对互动条目加 0.8 分奖励。"""
     n = len(items)
     recency = [0.99 ** (n - 1 - i) for i in range(n)]
     importance = [float(it.get("importance", 3)) / 10 for it in items]
@@ -119,27 +136,67 @@ def retrieve(nick: str, k: int = 5, query: str | None = None) -> list[dict]:
         return [(x - lo) / (hi - lo) if hi > lo else 0.5 for x in xs]
 
     rn, inn = norm(recency), norm(importance)
-    scores = [0.5 * rn[i] + 3 * inn[i] for i in range(n)]
-    top = sorted(range(n), key=lambda i: scores[i], reverse=True)[:k]
-    top.sort()  # 按时间序返回，便于阅读
-    return [items[i] for i in top]
+    out = []
+    for i, it in enumerate(items):
+        bonus = 0.8 if (it.get("reply_to_nick") or it.get("from")) else 0.0
+        out.append((0.5 * rn[i] + 3 * inn[i] + bonus, i, it))
+    out.sort(key=lambda x: -x[0])
+    return out
+
+
+def _is_interaction(item: dict) -> bool:
+    return bool(item.get("reply_to_nick") or item.get("from") or item.get("kind") == "received")
+
+
+def retrieve(nick: str, k: int = 5, query: str | None = None) -> list[dict]:
+    """加权检索（Stanford retrieve 的 recency + importance 两信号 + 互动奖励）。
+
+    score = 0.5*norm(recency) + 3*norm(importance) + 0.8×互动。
+    第三信号 relevance（embedding）留待 P1；query 参数预留，当前忽略。
+    旧条目无 importance 字段时默认 3，无需迁移。"""
+    items = recent(nick, KEEP)
+    if not items:
+        return []
+    top = [it for _, _, it in _scored(items)[:k]]
+    top.sort(key=lambda it: it.get("at", ""))   # 按时间序返回，便于阅读
+    return top
 
 
 def footprints(nicknames: list[str], k: int = 3, width: int = 60) -> str:
-    """生成"各人近期足迹"提示块；没有记忆的人返回空串占位说明。"""
+    """生成"各人近期足迹"提示块。混合配额：1 条自己的高热帖，其余名额留给
+    互动记忆（谁怼过我/我回了谁）——关系延续的地基；不足时按分数补齐。"""
     blocks = []
     for nick in nicknames:
-        items = retrieve(nick, k)
+        items = recent(nick, KEEP)
         if not items:
             continue
+        scored = _scored(items)
+        chosen: list[dict] = []
+        threads = [it for _, _, it in scored if it.get("kind") == "thread"]
+        if threads:
+            chosen.append(threads[0])
+        for _, _, it in scored:
+            if len(chosen) >= k:
+                break
+            if _is_interaction(it) and it not in chosen:
+                chosen.append(it)
+        for _, _, it in scored:
+            if len(chosen) >= k:
+                break
+            if it not in chosen:
+                chosen.append(it)
         lines = []
-        for it in items:
+        for it in chosen:
             body = " ".join(str(it.get("body", "")).split())[:width]
+            title = it.get("thread_title", "")
             if it.get("kind") == "thread":
-                lines.append(f"  · 发帖《{it.get('thread_title', '')}》：{body}")
+                lines.append(f"  · 发帖《{title}》：{body}")
+            elif it.get("kind") == "received":
+                lines.append(f"  · 在《{title}》下，{it.get('from', '?')} 对我说：{body}")
+            elif it.get("reply_to_nick"):
+                lines.append(f"  · 在《{title}》下我回复 {it['reply_to_nick']}：{body}")
             else:
-                target = f"（回复 {it['reply_to_nick']}）" if it.get("reply_to_nick") else ""
-                lines.append(f"  · 在《{it.get('thread_title', '')}》下评论{target}：{body}")
+                lines.append(f"  · 在《{title}》下评论：{body}")
         blocks.append(f"【{nick} 的近期足迹】\n" + "\n".join(lines))
     return "\n".join(blocks)
 

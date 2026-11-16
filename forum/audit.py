@@ -401,6 +401,29 @@ def detail(r: dict) -> str:
     return "\n".join(out)
 
 
+def memory_two_way() -> str:
+    """互动双向率：记忆中引用他人的条目里，对方记忆也有指向我的条目的占比。
+    基线 41%（59% 单向失忆——「A 怼了 B，只有 A 记得」）；Step1 见闻记忆后目标 ≥75%。"""
+    mem = {}
+    for p in (HERE / "data" / "memory").glob("*.json"):
+        try:
+            mem[p.stem] = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            pass
+    refs = []
+    for owner, items in mem.items():
+        for it in items:
+            other = it.get("from") or it.get("reply_to_nick")
+            if other:
+                refs.append((owner, other))
+    if not refs:
+        return "互动双向率: 暂无互动记忆（清库后待积累）"
+    two = sum(1 for o, c in refs
+              if any((it.get("from") or it.get("reply_to_nick")) == o
+                     for it in mem.get(c, [])))
+    return f"互动双向率: {two}/{len(refs)} = {two / len(refs) * 100:.0f}%  〔目标 ≥75%〕"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="论坛去AI味审计")
     ap.add_argument("--latest", type=int, default=0, help="只看最近 N 份快照")
@@ -452,6 +475,7 @@ def main() -> None:
         ]
         for label, a, b in rows:
             print(f"  {label:<10} {a} → {b}")
+    print("\n" + memory_two_way())
 
 
 if __name__ == "__main__":

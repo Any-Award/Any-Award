@@ -115,8 +115,9 @@ def persona_system(persona: dict, rules: list[str]) -> str:
     cd = _countdown(persona)
     if cd:
         state_lines += cd + "\n"
-    if state.get("insight"):
-        state_lines += f"（你最近想明白的事：{state['insight']}，相关时才用）\n"
+    insight = str(state.get("insight") or "").strip()
+    if insight and not _insight_is_slop(insight):   # 加载时补过滤:存量污染在这里兜底
+        state_lines += f"（你最近的心事：{insight}，相关时才用）\n"
     return (
         f"你就是{persona['nickname']}（{persona['tag']}）。{persona['personality']}\n"
         + (state_lines + "\n" if state_lines else "")
