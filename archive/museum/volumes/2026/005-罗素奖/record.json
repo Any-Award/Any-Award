@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "meta": {
+    "source_module": "seed_demo",
+    "award_name": "罗素奖",
+    "played_at": "2026-11-12T09:00:00",
+    "school_name": "华清大学",
+    "player_name": "吴主任"
+  },
+  "participants": [
+    {
+      "name": "郭校长"
+    },
+    {
+      "name": "赵副主任"
+    },
+    {
+      "name": "钱教授"
+    },
+    {
+      "name": "孙处长"
+    },
+    {
+      "name": "李部长"
+    },
+    {
+      "name": "周处长"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "R01",
+      "name": "全体学生",
+      "summary": "悖论对象",
+      "materials": "姓名：全体学生\n说明：若某人获得罗素奖，则他属于'获得罗素奖的学生'，按规则不应获奖；若他不获奖，则他属于'没获得罗素奖的学生'，按规则应获奖。"
+    }
+  ],
+  "events": [
+    {
+      "type": "speech",
+      "phase": "meeting",
+      "actor": "郭校长",
+      "text": "大量学生终其大学生涯没能获得任何奖励，这实在让人遗憾。以罗素之名设罗素奖——罗素奖颁发给所有没有获得罗素奖的学生。"
+    },
+    {
+      "type": "shortlist",
+      "item_ids": [
+        "R01"
+      ],
+      "decided_by": "吴主任"
+    },
+    {
+      "type": "qa",
+      "phase": "defense",
+      "candidate": "R01",
+      "questioner": "赵副主任",
+      "question": "这份获奖名单，逻辑上能成立吗？",
+      "answer": "委员会退回名单三次。获奖当且仅当不获奖，无法形成一致名单。建议校长明确措辞，或允许歧义本身成为玩法。"
+    },
+    {
+      "type": "note",
+      "phase": "ceremony",
+      "text": "本届罗素奖因自指悖论无法形成一致获奖名单，暂缓颁发，留待解释权争议解决。"
+    }
+  ],
+  "outcome": {
+    "final_order": null,
+    "shortlist": [
+      "R01"
+    ],
+    "winner": null
+  }
+}

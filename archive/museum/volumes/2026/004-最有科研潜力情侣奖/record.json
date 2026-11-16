@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "meta": {
+    "source_module": "seed_demo",
+    "award_name": "最有科研潜力情侣奖",
+    "played_at": "2026-11-11T14:00:00",
+    "school_name": "华清大学",
+    "player_name": "吴主任"
+  },
+  "participants": [
+    {
+      "name": "郭校长"
+    },
+    {
+      "name": "赵副主任"
+    },
+    {
+      "name": "钱教授"
+    },
+    {
+      "name": "孙处长"
+    },
+    {
+      "name": "李部长"
+    },
+    {
+      "name": "周处长"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "C01",
+      "name": "林知夏 & 顾行舟",
+      "summary": "物理学院 · 真情侣科研搭档",
+      "materials": "姓名：林知夏 & 顾行舟\n关系：情侣\n科研：合作发表SCI二区论文1篇，共同完成课题\n个人陈述：我们在一起两年，课题也是一起做的，分工明确。\n导师意见：两人合作真实，贡献相当。"
+    },
+    {
+      "id": "C02",
+      "name": "陈默 & 周雨桐",
+      "summary": "计算机学院 · 疑似假扮",
+      "materials": "姓名：陈默 & 周雨桐\n关系：自称情侣\n科研：各自方向不同，无合作成果\n个人陈述：我们感情很好，科研潜力体现在各自领域。\n导师意见：两人无共同科研产出，关系存疑。"
+    }
+  ],
+  "events": [
+    {
+      "type": "speech",
+      "phase": "meeting",
+      "actor": "郭校长",
+      "text": "为让美好感情与科研热情交相辉映，设最有科研潜力情侣奖。须一对情侣两人组队参评，既考察科研能力，也要求感情好、默契好，双人一同上台答辩。"
+    },
+    {
+      "type": "shortlist",
+      "item_ids": [
+        "C01",
+        "C02"
+      ],
+      "decided_by": "吴主任"
+    },
+    {
+      "type": "qa",
+      "phase": "defense",
+      "candidate": "C02",
+      "questioner": "钱教授",
+      "question": "你们没有合作成果，怎么证明科研潜力是'情侣'的？",
+      "answer": "我们各自都很强，加起来更强。感情好不一定非要一起发论文吧。"
+    },
+    {
+      "type": "qa",
+      "phase": "defense",
+      "candidate": "C01",
+      "questioner": "李部长",
+      "question": "你们答辩时谁主谁次？贡献怎么分？",
+      "answer": "论文我一作他二作，但实验他做得多。我们没分那么细，反正是一起的。"
+    },
+    {
+      "type": "decision",
+      "winner": "C01",
+      "decided_by": "吴主任",
+      "citation": "林知夏 & 顾行舟，真实情侣科研搭档，合作成果扎实、默契自然。"
+    }
+  ],
+  "outcome": {
+    "final_order": null,
+    "shortlist": [
+      "C01",
+      "C02"
+    ],
+    "winner": "C01"
+  }
+}

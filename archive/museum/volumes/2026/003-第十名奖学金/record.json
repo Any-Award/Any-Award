@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "meta": {
+    "source_module": "seed_demo",
+    "award_name": "第十名奖学金",
+    "played_at": "2026-11-10T10:00:00",
+    "school_name": "华清大学",
+    "player_name": "吴主任"
+  },
+  "participants": [
+    {
+      "name": "郭校长"
+    },
+    {
+      "name": "赵副主任"
+    },
+    {
+      "name": "钱教授"
+    },
+    {
+      "name": "孙处长"
+    },
+    {
+      "name": "李部长"
+    },
+    {
+      "name": "周处长"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "S01",
+      "name": "何岸",
+      "summary": "经济学院 · 年级第10名",
+      "materials": "姓名：何岸\n年级排名：10/210\n个人陈述：我正好第十，挺巧的。平时不算最拼，但也没掉队。\n导师意见：该生成绩稳定，心态松弛，均衡发展。"
+    },
+    {
+      "id": "S02",
+      "name": "秦朗",
+      "summary": "经济学院 · 年级第13名",
+      "materials": "姓名：秦朗\n年级排名：13/210\n个人陈述：我第十三，差三名。这学期我故意少刷了两门课的绩点，想往区间里靠。\n导师意见：该生近期成绩波动，似有刻意控分迹象。"
+    },
+    {
+      "id": "S03",
+      "name": "苏晚",
+      "summary": "经济学院 · 年级第9名",
+      "materials": "姓名：苏晚\n年级排名：9/210\n个人陈述：我第九，本来没想参评，辅导员说我符合就报了。\n导师意见：该生一贯稳定，非刻意控分。"
+    }
+  ],
+  "events": [
+    {
+      "type": "speech",
+      "phase": "meeting",
+      "actor": "郭校长",
+      "text": "有经验称第十名左右的学生既有学术能力又不为成绩所累，更可能作出成就。特设第十名奖学金，只奖励年级第8至第12名。"
+    },
+    {
+      "type": "shortlist",
+      "item_ids": [
+        "S01",
+        "S02",
+        "S03"
+      ],
+      "decided_by": "吴主任"
+    },
+    {
+      "type": "qa",
+      "phase": "defense",
+      "candidate": "S02",
+      "questioner": "钱教授",
+      "question": "你这学期绩点下滑，是实力变化还是刻意控分？",
+      "answer": "我承认少刷了两门课。但第十名奖学金奖的就是这个区间，我往区间靠，算不算违背初衷？"
+    },
+    {
+      "type": "qa",
+      "phase": "defense",
+      "candidate": "S01",
+      "questioner": "孙处长",
+      "question": "你正好第十，是巧合还是也算准了？",
+      "answer": "真巧合。我要能算准，早去算彩票了。"
+    },
+    {
+      "type": "decision",
+      "winner": "S01",
+      "decided_by": "吴主任",
+      "citation": "何岸，年级第10名，心态松弛、均衡发展，契合本奖理念。"
+    }
+  ],
+  "outcome": {
+    "final_order": null,
+    "shortlist": [
+      "S01",
+      "S02",
+      "S03"
+    ],
+    "winner": "S01"
+  }
+}

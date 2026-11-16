@@ -1,0 +1,23 @@
+{
+  "format": "anyaward-museum-meta",
+  "version": 1,
+  "volume_no": "005",
+  "doc_no": "校奖发〔2026〕005号",
+  "year": 2026,
+  "volume_dir": "volumes/2026/005-罗素奖",
+  "school_name": "华清大学",
+  "player_name": "吴主任",
+  "award_name": "罗素奖",
+  "source_module": "seed_demo",
+  "session_id": "73a4558abbde4986bd27bd70e9a4ab69",
+  "played_at": "2026-11-12T09:00:00",
+  "deposited_at": "2026-11-15T09:54:30",
+  "model": null,
+  "prompts_digest": null,
+  "winner_display": "",
+  "counts": {
+    "events": 4,
+    "moves": 0,
+    "passes": 0
+  }
+}

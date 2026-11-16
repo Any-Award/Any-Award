@@ -1,0 +1,23 @@
+{
+  "format": "anyaward-museum-meta",
+  "version": 1,
+  "volume_no": "003",
+  "doc_no": "校奖发〔2026〕003号",
+  "year": 2026,
+  "volume_dir": "volumes/2026/003-第十名奖学金",
+  "school_name": "华清大学",
+  "player_name": "吴主任",
+  "award_name": "第十名奖学金",
+  "source_module": "seed_demo",
+  "session_id": "8198c45c3ce94d4eabdb51774d69fd47",
+  "played_at": "2026-11-10T10:00:00",
+  "deposited_at": "2026-11-15T09:51:43",
+  "model": null,
+  "prompts_digest": null,
+  "winner_display": "何岸",
+  "counts": {
+    "events": 5,
+    "moves": 0,
+    "passes": 0
+  }
+}

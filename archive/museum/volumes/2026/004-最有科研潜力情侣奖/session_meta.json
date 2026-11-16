@@ -1,0 +1,23 @@
+{
+  "format": "anyaward-museum-meta",
+  "version": 1,
+  "volume_no": "004",
+  "doc_no": "校奖发〔2026〕004号",
+  "year": 2026,
+  "volume_dir": "volumes/2026/004-最有科研潜力情侣奖",
+  "school_name": "华清大学",
+  "player_name": "吴主任",
+  "award_name": "最有科研潜力情侣奖",
+  "source_module": "seed_demo",
+  "session_id": "74ca771147ee4725bab98696305da846",
+  "played_at": "2026-11-11T14:00:00",
+  "deposited_at": "2026-11-15T09:51:43",
+  "model": null,
+  "prompts_digest": null,
+  "winner_display": "林知夏 & 顾行舟",
+  "counts": {
+    "events": 5,
+    "moves": 0,
+    "passes": 0
+  }
+}

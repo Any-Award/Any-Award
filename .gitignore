@@ -23,3 +23,17 @@ forum/data/backup-*/
 # 系统
 .DS_Store
 Thumbs.db
+
+# 会话工具目录
+.zcode/
+
+# 运行时状态（每次生成自动重建；关系表导入时自动播种）
+forum/data/states.json
+forum/data/relationships.json
+archive/data/
+
+# 生成产物（运行时产物不进仓库；已跟踪的早期快照作为审计基线语料保留）
+forum/output/last_pack.json
+forum/output/snapshot-2*.json
+forum/output/snapshot-2*.md
+news/output/
