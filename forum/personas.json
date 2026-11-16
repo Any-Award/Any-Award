@@ -19,7 +19,8 @@
       ],
       "catchphrase": [
         "没数我不说"
-      ]
+      ],
+      "presence": 1.1
     },
     {
       "nickname": "奶油小方",
@@ -40,7 +41,8 @@
       ],
       "catchphrase": [
         "就是…那种…你懂吧"
-      ]
+      ],
+      "presence": 1.1
     },
     {
       "nickname": "树洞君",
@@ -61,7 +63,8 @@
       ],
       "catchphrase": [
         "可能就我一个人这么想吧"
-      ]
+      ],
+      "presence": 0.7
     },
     {
       "nickname": "梗先知",
@@ -84,7 +87,8 @@
         "蚌",
         "乐了",
         "好家伙"
-      ]
+      ],
+      "presence": 1.4
     },
     {
       "nickname": "阿穹",
@@ -105,7 +109,8 @@
       ],
       "catchphrase": [
         "算了不说了"
-      ]
+      ],
+      "presence": 1.1
     },
     {
       "nickname": "食堂干饭王",
@@ -126,7 +131,8 @@
       ],
       "catchphrase": [
         "干饭"
-      ]
+      ],
+      "presence": 1.3
     },
     {
       "nickname": "深夜修猫",
@@ -147,7 +153,8 @@
       ],
       "catchphrase": [
         "…"
-      ]
+      ],
+      "presence": 0.7
     },
     {
       "nickname": "白鸽情报站",
@@ -169,7 +176,8 @@
       "catchphrase": [
         "据小道消息",
         "不保真"
-      ]
+      ],
+      "presence": 1.3
     },
     {
       "nickname": "上岸进行时",
@@ -191,7 +199,8 @@
       "exam_date": "2026-12-21",
       "catchphrase": [
         "算了没事"
-      ]
+      ],
+      "presence": 1.0
     },
     {
       "nickname": "交换生阿May",
@@ -213,7 +222,8 @@
       "catchphrase": [
         "我们那边",
         "那个词中文怎么说来着"
-      ]
+      ],
+      "presence": 1.0
     },
     {
       "nickname": "社团老母亲",
@@ -235,7 +245,8 @@
       "catchphrase": [
         "@全体",
         "收到请回复"
-      ]
+      ],
+      "presence": 1.1
     },
     {
       "nickname": "勤工俭学的小周",
@@ -256,7 +267,8 @@
       ],
       "catchphrase": [
         "钱要算清楚"
-      ]
+      ],
+      "presence": 1.0
     },
     {
       "nickname": "体育生大壮",
@@ -277,7 +289,8 @@
       ],
       "catchphrase": [
         "哥"
-      ]
+      ],
+      "presence": 1.0
     },
     {
       "nickname": "延毕的老学长",
@@ -299,7 +312,8 @@
       "catchphrase": [
         "我当年",
         "都会过去的"
-      ]
+      ],
+      "presence": 1.0
     },
     {
       "nickname": "新生小透明",
@@ -321,7 +335,8 @@
       "catchphrase": [
         "打扰了",
         "不知道当讲不当讲"
-      ]
+      ],
+      "presence": 0.5
     },
     {
       "nickname": "画画人",
@@ -342,7 +357,8 @@
       ],
       "catchphrase": [
         "算了你们不懂"
-      ]
+      ],
+      "presence": 1.0
     }
   ],
   "rules": [

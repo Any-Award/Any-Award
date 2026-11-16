@@ -142,6 +142,8 @@ def persona_system(persona: dict, rules: list[str]) -> str:
         f"你就是{persona['nickname']}（{persona['tag']}）。{persona['personality']}\n"
         + (state_lines + "\n" if state_lines else "")
         + f"语气：{persona['style']}\n"
+        + (f"表达缺陷（自然体现就好，别每条都触发）：{persona.get('flaw', '')}\n"
+           f"边界（不越线）：{persona.get('boundary', '')}\n")
         + f"说话样板（学腔调，别照抄）：\n{ex}\n\n"
         + "全体规则：\n" + rules_block(rules)
     )
@@ -173,13 +175,14 @@ def _weighted_sample(pool: list, weights: list, k: int) -> list:
 
 
 def eligible_posters(personas: list, n: int, hour: int | None = None) -> list:
-    """场景门控后的发帖人抽样：深夜/凌晨角色仅在 23–7 点可被抽中。"""
+    """场景门控后的发帖人抽样：深夜/凌晨角色仅在 23–7 点可被抽中；
+    presence 字段(默认1.0)控制话痨/潜水差异(Step4)。"""
     from datetime import datetime
     hour = datetime.now().hour if hour is None else hour
     pool = [p for p in personas if not _is_night_owl(p) or _night_ok(hour)]
     if not pool:
         pool = list(personas)
-    return _weighted_sample(pool, [1.0] * len(pool), min(n, len(pool)))
+    return _weighted_sample(pool, [float(p.get("presence", 1.0)) for p in pool], min(n, len(pool)))
 
 
 def pick_responders(personas: list, thread: dict, target_comment: dict | None = None,
@@ -196,12 +199,9 @@ def pick_responders(personas: list, thread: dict, target_comment: dict | None = 
         pool = [p for p in personas if p["nickname"] != op]
     weights = []
     for p in pool:
-        w = 1.0
         rel = str(p.get("relations", ""))
-        if op and op in rel:
-            w += 2
-        if target_nick and target_nick in rel:
-            w += 2
+        w = (1.0 + (2 if op and op in rel else 0) + (2 if target_nick and target_nick in rel else 0))
+        w *= float(p.get("presence", 1.0))
         weights.append(w)
     return _weighted_sample(pool, weights, min(n, len(pool)))
 

@@ -210,16 +210,20 @@ def footprints(nicknames: list[str], k: int = 3, width: int = 60) -> str:
 
 
 def hot_topics(k: int = 4) -> str:
+    """热帖按评论数排序（Step4 前是"最新4帖"——热≠新）。"""
     if not STATE_PATH.is_file():
         return ""
     try:
         state = json.loads(STATE_PATH.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return ""
-    titles = [t.get("title", "") for t in (state.get("threads") or [])[-k:]]
+    threads = (state.get("threads") or [])[-10:]
+    ranked = sorted(threads, key=lambda t: len(t.get("comments") or []), reverse=True)[:k]
+    titles = [f"《{t.get('title', '')}》({len(t.get('comments') or [])}评)"
+              for t in ranked if t.get("title")]
     if not titles:
         return ""
-    return "论坛最近的热帖：" + "、".join(f"《{t}》" for t in reversed(titles))
+    return "论坛现在的热帖（按评论数）：" + "、".join(titles)
 
 
 # ---------------------------------------------------------------------------

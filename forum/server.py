@@ -78,13 +78,18 @@ def append_ai_comments(thread: dict, comments, tags: dict, default_reply: str | 
     """
     nick_to_id = {c["author"]["nickname"]: c["id"] for c in thread["comments"]}
     added = []
-    for c in comments or []:
+    base = datetime.now()
+    for i, c in enumerate(comments or []):
         nickname = c.get("nickname")
         if nickname not in tags:
             continue
         rt = str(c.get("reply_to") or "").strip()
         reply_id = default_reply if rt in ("", "楼主") else nick_to_id.get(rt, default_reply)
         new = make_comment(c.get("body", ""), nickname, "ai", tags[nickname], reply_to=reply_id)
+        # 错峰: 同批评论按楼序加 25-70 秒偏移——旧版整层楼 100% 同一秒,时序感为零
+        from datetime import timedelta
+        import random as _random
+        new["created_at"] = (base + timedelta(seconds=(i + 1) * _random.randint(25, 70))).isoformat(timespec="seconds")
         thread["comments"].append(new)
         nick_to_id[nickname] = new["id"]
         added.append(new)
@@ -334,12 +339,35 @@ def make_handler() -> type:
                 self._json(500, {"error": str(exc)})
                 return
             tags = {p["nickname"]: p["tag"] for p in personas_data["personas"]}
+            new_threads = []
             with LOCK:
                 state = load_state()
                 for t in result.get("threads") or []:
                     thread = make_thread(t.get("title", ""), t.get("body", ""), t.get("nickname", ""), "ai", tags.get(t.get("nickname"), ""))
                     state["threads"].append(thread)
                     memory.record_thread(thread)
+                    new_threads.append((thread, tags))
+                save_state(state)
+            # 日常帖也补评论（Step4: 修复日常帖发出即死——此前 9/29 帖零回复）
+            for thread, tg in new_threads:
+                try:
+                    added = append_ai_comments(
+                        thread,
+                        generate_comments(client, env["LLM_MODEL_NAME"], personas_data["personas"],
+                                          personas_data["rules"], thread, temperature=1.2).get("comments"),
+                        tg)
+                    for c in added:
+                        memory.record_comment(thread, c)
+                    sync_relations(thread, added, client, env["LLM_MODEL_NAME"])
+                except Exception as exc:  # noqa: BLE001
+                    print(f"日常帖评论失败：{exc}", file=sys.stderr)
+            with LOCK:
+                state = load_state()
+                by_id = {t["id"]: t for t in state["threads"]}
+                for thread, _ in new_threads:
+                    cur = by_id.get(thread["id"])
+                    if cur is not None:
+                        cur["comments"] = thread["comments"]
                 save_state(state)
                 self._json(200, {"ok": True, "threads": [public_thread(t) for t in reversed(state["threads"])]})
 

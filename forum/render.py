@@ -30,7 +30,14 @@ def render(snapshot: dict) -> str:
             "---",
             "",
         ]
-    clock = 21 * 60 + 3  # 论坛水帖高峰：晚上九点起
+    clock = None
+    gen_at = meta.get("generated_at", "")
+    try:
+        clock = int(gen_at[11:13]) * 60 + int(gen_at[14:16])
+    except (ValueError, IndexError):
+        pass
+    if clock is None:  # 论坛水帖高峰：晚上九点起（无生成时间时的兜底）
+        clock = 21 * 60 + 3
     for i, t in enumerate(snapshot.get("threads") or [], 1):
         lines += [
             f"### 【{i}】{t.get('title', '')}",
