@@ -26,6 +26,7 @@ from openai import OpenAI
 from render import render
 import memory
 from lexicon import BANNED_COOC, BANNED_FRAMES, BANNED_WORDS, COMPILED_FRAMES, banned_prompt_line
+import relations
 
 HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parent
@@ -94,6 +95,25 @@ def post_block(include_reply_example: bool = True) -> str:
         "【口头禅是稀有品】标志句十条里最多冒一两次，一条里堆好几个=严重 AI 味。标志句不是你的身份，绝大多数时候你就是正常说话。"
     )
     return base + "\n" + extra
+
+
+def update_relation_from_reply(client, model, a_nick: str, b_nick: str,
+                               title: str, target_text: str, reply_text: str) -> None:
+    """LLM 评价一次 AI→AI 回帖互动对关系的影响（±3 分），写 relationships.json。
+    失败静默跳过——关系更新是增强，绝不能让发帖主路径失败。"""
+    try:
+        edge = relations.ensure(a_nick, b_nick)
+        r = chat(client, model,
+                 "你是校园论坛的关系观察员。根据一次回帖互动，评估它对两人关系的影响，只输出 JSON。",
+                 f"帖子：《{title}》\n{b_nick} 的原话：「{str(target_text)[:80]}」\n"
+                 f"{a_nick} 回复说：「{str(reply_text)[:80]}」\n"
+                 f"当前关系强度 {edge['strength']}/100。\n"
+                 "输出 JSON：{\"delta\": -3到3的整数, \"note\": \"不超过20字的关系现状描述\"}",
+                 0.3, max_tokens=100)
+        delta = max(-3, min(3, int(r.get("delta", 0))))
+        relations.update(a_nick, b_nick, delta, str(r.get("note", "")))
+    except Exception:
+        pass
 
 
 def persona_system(persona: dict, rules: list[str]) -> str:

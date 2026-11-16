@@ -29,7 +29,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from generate import generate_snapshot, generate_comments, generate_replies_to_comment, generate_daily, save_snapshot, load_personas, load_llm_env, ensure_fresh_states
+from generate import generate_snapshot, generate_comments, generate_replies_to_comment, generate_daily, save_snapshot, load_personas, load_llm_env, ensure_fresh_states, update_relation_from_reply
 import memory
 from openai import OpenAI
 from dotenv import dotenv_values
@@ -94,6 +94,38 @@ def append_ai_comments(thread: dict, comments, tags: dict, default_reply: str | 
 # ---------------------------------------------------------------------------
 # 状态读写
 # ---------------------------------------------------------------------------
+
+def sync_relations(thread: dict, added: list, client, model) -> None:
+    """本批新增的 AI→AI 楼中楼，逐对更新关系表（每对一次 LLM 评价，失败静默）。
+    必须在 LOCK 之外调用——评价是秒级 LLM 调用，锁内会阻塞所有请求。"""
+    by_id = {c["id"]: c for c in thread["comments"]}
+    op_author = thread.get("author") or {}
+    pairs: dict = {}
+    for c in added:
+        a_author = c.get("author") or {}
+        if a_author.get("kind") != "ai":
+            continue
+        a = a_author.get("nickname", "")
+        t = by_id.get(c.get("reply_to"))
+        if t is None:
+            if op_author.get("kind") != "ai":
+                continue
+            b, ttext = op_author.get("nickname", ""), thread.get("body", "")
+        else:
+            ta = t.get("author") or {}
+            if ta.get("kind") != "ai":
+                continue
+            b, ttext = ta.get("nickname", ""), t.get("body", "")
+        if not b or b == a:
+            continue
+        key = tuple(sorted((a, b)))
+        pairs.setdefault(key, (a, b, ttext, c.get("body", "")))
+    for a, b, ttext, rtext in pairs.values():
+        try:
+            update_relation_from_reply(client, model, a, b, thread.get("title", ""), ttext, rtext)
+        except Exception as exc:  # noqa: BLE001
+            print(f"关系更新失败({a}↔{b})：{exc}", file=sys.stderr)
+
 
 def load_state() -> dict:
     if STATE_PATH.is_file():
@@ -164,6 +196,7 @@ def ai_react(thread: dict, target_comment: dict | None = None) -> None:
     added = append_ai_comments(thread, result.get("comments"), known, default_reply)
     for c in added:  # 只记录本轮新增，避免重复入库
         memory.record_comment(thread, c)
+    sync_relations(thread, added, client, env["LLM_MODEL_NAME"])
 
 
 # ---------------------------------------------------------------------------
@@ -259,15 +292,23 @@ def make_handler() -> type:
                 self._json(500, {"error": str(exc)})
                 return
             tags = {p["nickname"]: p["tag"] for p in load_personas()["personas"]}
+            new_added = []
             with LOCK:
                 state = load_state()
                 state["announcement"] = snapshot.get("announcement") or state.get("announcement")
                 for t in snapshot.get("threads") or []:
                     thread = make_thread(t.get("title", ""), t.get("body", ""), t.get("nickname", ""), "ai", tags.get(t.get("nickname"), ""))
-                    append_ai_comments(thread, t.get("comments"), tags)
+                    new_added.append((thread, append_ai_comments(thread, t.get("comments"), tags)))
                     state["threads"].append(thread)
                     memory.record_thread(thread)
                 save_state(state)
+            # 关系评价是秒级 LLM 调用,放到锁外(锁内只做状态读写)
+            env = load_llm_env()
+            client = OpenAI(api_key=env["LLM_API_KEY"], base_url=env["LLM_API_BASE"])
+            for thread, added in new_added:
+                sync_relations(thread, added, client, env["LLM_MODEL_NAME"])
+            with LOCK:
+                state = load_state()
                 self._json(200, {"ok": True, "threads": [public_thread(t) for t in reversed(state["threads"])]})
 
         def _handle_refresh(self) -> None:
