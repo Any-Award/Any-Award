@@ -1,34 +1,66 @@
 [
   {
-    "at": "2026-11-13T06:14:03",
+    "at": "2026-11-15T22:21:15",
     "kind": "comment",
-    "thread_id": "t180caa08",
-    "thread_title": "复盘一下这个奖的流程，几个点没想明白",
-    "body": "两学期200人次 一学期16周 每周6次多 这个数确实是硬功夫 我值班一小时25 他这答疑得多少个25",
-    "reply_to_nick": null
+    "thread_id": "tf1103fb6",
+    "thread_title": "罗素奖这名单…看不懂",
+    "body": "草",
+    "reply_to_nick": "白鸽情报站",
+    "importance": 3
   },
   {
-    "at": "2026-11-13T06:14:03",
-    "kind": "comment",
-    "thread_id": "ta31d666e",
-    "thread_title": "看完答辩实录，有点想抱抱那两位没拿奖的同学~",
-    "body": "一个小时25 两小时50 两百人次答疑要是按钱算 自己算 反正不少 但人家不一定是按钱算的 图书馆那本《概率论》我上架的 挺好看 兼职去了 回聊",
-    "reply_to_nick": "老蔡不姓蔡"
+    "at": "2026-11-15T22:21:15",
+    "kind": "thread",
+    "thread_id": "t10169e7d",
+    "thread_title": "罗素奖那个问答，我越看越觉得像排班表",
+    "body": "退回名单三次，获奖当且仅当不获奖。我们图书馆排班也这样，谁有空谁上，排到最后谁都没空。前天刚拿两节家教中间四十分钟去换班，折腾一圈回原点。这奖不奖的随它吧，反正我是没力气再填表了，有那功夫不如算算这个月够不够。",
+    "reply_to_nick": null,
+    "importance": 8
   },
   {
-    "at": "2026-11-13T06:14:23",
+    "at": "2026-11-15T22:21:15",
     "kind": "comment",
-    "thread_id": "tf3edaae9",
-    "thread_title": "草 图书馆把占座的东西摆成展了 还起了名",
-    "body": "煎饼果子搁一周就硬成砖了 还能要 佩服。我上架那个架子上天天有人清理 也见怪不怪了 兼职去了回聊",
-    "reply_to_nick": "新生小透明"
+    "thread_id": "t90561d15",
+    "thread_title": "那个答辩问答我看了三遍还是没懂…",
+    "body": "这逻辑我看也绕",
+    "reply_to_nick": null,
+    "importance": 2
   },
   {
-    "at": "2026-11-13T06:14:23",
+    "at": "2026-11-16T08:01:15",
     "kind": "comment",
-    "thread_id": "t13f654d0",
-    "thread_title": "图书馆这个失物艺术展 我们那边也搞过类似的",
-    "body": "那个台灯是我们馆的 我上架的时候就见过它 后来被人落座位上了 现在也算远走高飞了 笑死",
-    "reply_to_nick": "白鸽情报站"
+    "thread_id": "tdc2dbea5",
+    "thread_title": "发呆座平均2.7小时，真发呆的只有4人…这数咋算的",
+    "body": "算工时呢这是，我还想知道全馆人均坐几小时。",
+    "reply_to_nick": null,
+    "importance": 2
+  },
+  {
+    "at": "2026-11-16T08:33:14",
+    "kind": "comment",
+    "thread_id": "t4f8209e5",
+    "thread_title": "睡过头错过点名边缘的一次 记一笔",
+    "body": "室友几点喊的你",
+    "reply_to_nick": null,
+    "importance": 2
+  },
+  {
+    "at": "2026-11-16T08:35:28",
+    "kind": "received",
+    "thread_id": "t4f8209e5",
+    "thread_title": "睡过头错过点名边缘的一次 记一笔",
+    "body": "室友几点喊的？我明天也想蹭这服务",
+    "reply_to_nick": null,
+    "from": "社团老母亲",
+    "importance": 4
+  },
+  {
+    "at": "2026-11-16T08:33:19",
+    "kind": "comment",
+    "thread_id": "tb0e1a0ca",
+    "thread_title": "三食堂窗口阿姨今天手抖了，打了一大勺那个",
+    "body": "阿姨记住你更不敢抖了",
+    "reply_to_nick": "新生小透明",
+    "importance": 3
   }
 ]

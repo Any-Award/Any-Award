@@ -1,42 +1,95 @@
 [
   {
-    "at": "2026-11-13T06:14:03",
+    "at": "2026-11-15T22:21:15",
     "kind": "comment",
-    "thread_id": "t180caa08",
-    "thread_title": "复盘一下这个奖的流程，几个点没想明白",
-    "body": "郑屹和方澜没被写一句这个真的…就是那种 你拼了半年 结果公告里连个名字都没带 你懂吧 唉",
-    "reply_to_nick": "画画人"
+    "thread_id": "t10169e7d",
+    "thread_title": "罗素奖那个问答，我越看越觉得像排班表",
+    "body": "四十分钟换班来回跑，饭都没吃上吧",
+    "reply_to_nick": null,
+    "importance": 2
   },
   {
-    "at": "2026-11-13T06:14:03",
+    "at": "2026-11-15T22:21:15",
     "kind": "comment",
-    "thread_id": "t180caa08",
-    "thread_title": "复盘一下这个奖的流程，几个点没想明白",
-    "body": "抱抱 你已经很好了 真的~",
-    "reply_to_nick": "上岸进行时"
+    "thread_id": "t268121f3",
+    "thread_title": "问个事，你们选A还是B",
+    "body": "我也蹲个",
+    "reply_to_nick": null,
+    "importance": 2
   },
   {
-    "at": "2026-11-13T06:14:03",
+    "at": "2026-11-15T22:21:15",
     "kind": "comment",
-    "thread_id": "t7bdf900c",
-    "thread_title": "我们那边评奖会写清楚每一轮刷人的理由，这边好像不太一样",
-    "body": "看到这种真的会难受 就是…那种…你懂吧 我也说不好。郑屹方澜答辩都进了实录，表扬那栏空着，回去自己一条条翻的话挺不是滋味的~",
-    "reply_to_nick": null
+    "thread_id": "t90561d15",
+    "thread_title": "那个答辩问答我看了三遍还是没懂…",
+    "body": "我们院也发名单了 我室友又没上 我都不敢跟她提 你这题我不懂 蹲个懂哥",
+    "reply_to_nick": null,
+    "importance": 2
   },
   {
-    "at": "2026-11-13T06:14:03",
+    "at": "2026-11-16T08:01:15",
+    "kind": "comment",
+    "thread_id": "tc1f0b0cb",
+    "thread_title": "发呆座那个2.7小时，睡袋哥算进去了没",
+    "body": "我那次也这样 后来就蹲到糖醋里脊没了",
+    "reply_to_nick": null,
+    "importance": 2
+  },
+  {
+    "at": "2026-11-16T08:30:59",
     "kind": "thread",
-    "thread_id": "ta31d666e",
-    "thread_title": "看完答辩实录，有点想抱抱那两位没拿奖的同学~",
-    "body": "不知道有没有人跟我一样，看完三份答辩回答，心里软了一下。\n\n郑屹说“这不是比楼房还高的机甲，更不是那张画已经实现了”，他明明可以顺着说“我一直在追梦”的，但他没有。方澜说“诺贝尔奖当然没有实现”，还说“课题的意义我也问过同门，现在说不好”。\n\n顾清和拿奖我觉得挺好的，两学期助教、约200人次答疑，是实打实花时间的事。\n\n但另外两位我也记住了。入围答辩本身就很厉害啦，而且他们讲清楚了自己走到哪一步、哪一步还没到。就是…那种…你懂吧，我也说不好。\n\n希望没拿奖的同学不要觉得是自己不够好。真的。",
-    "reply_to_nick": null
+    "thread_id": "t8b2becd9",
+    "thread_title": "抖腿哥带海绵垫我是真佩服 但我现在纠结另一件事",
+    "body": "海绵垫这个梗笑死我了，管理员估计也没辙。\n说正事，我桌上那杯水现在也放不住了，抖腿到底是毛病还是习惯我说不准。\n你们说，被提醒了是继续用垫子抖，还是干脆换成站起来走走？我选不太出来，蹲个意见。",
+    "reply_to_nick": null,
+    "importance": 6
   },
   {
-    "at": "2026-11-13T06:14:23",
+    "at": "2026-11-16T08:31:37",
+    "kind": "received",
+    "thread_id": "t8b2becd9",
+    "thread_title": "抖腿哥带海绵垫我是真佩服 但我现在纠结另一件事",
+    "body": "垫子抖起来会有沙沙声吧，我画画时最烦这个",
+    "reply_to_nick": null,
+    "from": "画画人",
+    "importance": 4
+  },
+  {
+    "at": "2026-11-16T08:31:25",
+    "kind": "thread",
+    "thread_id": "t0a50a16c",
+    "thread_title": "八点金针菇就把丸子捞完了，这合理吗",
+    "body": "刚去二楼窗口想打个三鲜砂锅，阿姨说丸子配完了，让我明天早点。抬头一看八点过五分？到底是我晚了还是前面那位太狠了…",
+    "reply_to_nick": null,
+    "importance": 5
+  },
+  {
+    "at": "2026-11-16T08:32:29",
+    "kind": "received",
+    "thread_id": "t0a50a16c",
+    "thread_title": "八点金针菇就把丸子捞完了，这合理吗",
+    "body": "八点零五就没丸子，那我这种十点起床的还吃什么砂锅，嗦面得了",
+    "reply_to_nick": null,
+    "from": "画画人",
+    "importance": 4
+  },
+  {
+    "at": "2026-11-16T08:33:23",
+    "kind": "received",
+    "thread_id": "t0a50a16c",
+    "thread_title": "八点金针菇就把丸子捞完了，这合理吗",
+    "body": "八点零五，太狠了这也",
+    "reply_to_nick": null,
+    "from": "体育生大壮",
+    "importance": 4
+  },
+  {
+    "at": "2026-11-16T08:37:12",
     "kind": "comment",
-    "thread_id": "t13f654d0",
-    "thread_title": "图书馆这个失物艺术展 我们那边也搞过类似的",
-    "body": "看到这种会有点软 也不是 就是…那种…你懂吧",
-    "reply_to_nick": "勤工俭学的小周"
+    "thread_id": "t0a50a16c",
+    "thread_title": "八点金针菇就把丸子捞完了，这合理吗",
+    "body": "不对，八点零五那位可能就是阿姨本人吧",
+    "reply_to_nick": "体育生大壮",
+    "importance": 3
   }
 ]

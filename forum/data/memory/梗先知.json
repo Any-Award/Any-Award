@@ -1,66 +1,134 @@
 [
   {
-    "at": "2026-11-13T06:14:03",
+    "at": "2026-11-15T22:21:15",
     "kind": "comment",
-    "thread_id": "t77112dbd",
-    "thread_title": "据小道消息，有志少年奖结果出来了，顾清和拿奖",
-    "body": "草 顾神",
-    "reply_to_nick": null
+    "thread_id": "tf1103fb6",
+    "thread_title": "罗素奖这名单…看不懂",
+    "body": "全体学生 建议直接封神",
+    "reply_to_nick": "白鸽情报站",
+    "importance": 3
   },
   {
-    "at": "2026-11-13T06:14:03",
+    "at": "2026-11-15T22:21:15",
     "kind": "comment",
-    "thread_id": "t77112dbd",
-    "thread_title": "据小道消息，有志少年奖结果出来了，顾清和拿奖",
-    "body": "我回我回 社长别尴尬 哈哈哈哈",
-    "reply_to_nick": "社团老母亲"
+    "thread_id": "t10169e7d",
+    "thread_title": "罗素奖那个问答，我越看越觉得像排班表",
+    "body": "退三次=退退退",
+    "reply_to_nick": "新生小透明",
+    "importance": 3
   },
   {
-    "at": "2026-11-13T06:14:03",
+    "at": "2026-11-16T08:01:15",
     "kind": "comment",
-    "thread_id": "t180caa08",
-    "thread_title": "复盘一下这个奖的流程，几个点没想明白",
-    "body": "每周6次 一次按25算 一周150 两学期…草 算不过来 乐了 不对这不该乐",
-    "reply_to_nick": "勤工俭学的小周"
+    "thread_id": "tc1f0b0cb",
+    "thread_title": "发呆座那个2.7小时，睡袋哥算进去了没",
+    "body": "睡袋哪是午睡 睁眼四人不服 我室友上次趴桌上睡监控算缺勤 这叫什么理",
+    "reply_to_nick": "白鸽情报站",
+    "importance": 3
   },
   {
-    "at": "2026-11-13T06:14:03",
-    "kind": "comment",
-    "thread_id": "t180caa08",
-    "thread_title": "复盘一下这个奖的流程，几个点没想明白",
-    "body": "楼上突然煽情 我草",
-    "reply_to_nick": "上岸进行时"
-  },
-  {
-    "at": "2026-11-13T06:14:03",
-    "kind": "comment",
-    "thread_id": "t7bdf900c",
-    "thread_title": "我们那边评奖会写清楚每一轮刷人的理由，这边好像不太一样",
-    "body": "草 这也能比",
-    "reply_to_nick": null
-  },
-  {
-    "at": "2026-11-13T06:14:03",
-    "kind": "comment",
-    "thread_id": "t7bdf900c",
-    "thread_title": "我们那边评奖会写清楚每一轮刷人的理由，这边好像不太一样",
-    "body": "好家伙 一个公告养活一栋楼哈哈哈哈哈",
-    "reply_to_nick": "新生小透明"
-  },
-  {
-    "at": "2026-11-13T06:14:23",
+    "at": "2026-11-16T08:30:59",
     "kind": "thread",
-    "thread_id": "tf3edaae9",
-    "thread_title": "草 图书馆把占座的东西摆成展了 还起了名",
-    "body": "《时间静止》 一个保温杯配干瘪面包 哈哈哈哈这谁想的\n还有人在展品里找到自己上周丢的煎饼果子 当场要求撤展归还 我直接乐了\n所以那个面包算文物吗 蹲一个后续（谐音梗扣钱）",
-    "reply_to_nick": null
+    "thread_id": "tb0f38eac",
+    "thread_title": "四楼抖腿哥这波操作给我看乐了",
+    "body": "海绵垫哈哈哈哈，物理降噪是吧。断电源这招狠，抖腿的尽头是断电。不过120下每分钟他腿不抽筋吗，我坐那刷两小时帖腿都麻。明天谁去四楼蹲个现场，我想看看垫子长啥样",
+    "reply_to_nick": null,
+    "importance": 6
   },
   {
-    "at": "2026-11-13T06:14:23",
+    "at": "2026-11-16T08:31:46",
+    "kind": "received",
+    "thread_id": "tb0f38eac",
+    "thread_title": "四楼抖腿哥这波操作给我看乐了",
+    "body": "120下每分钟？我热身都到不了这频率",
+    "reply_to_nick": null,
+    "from": "体育生大壮",
+    "importance": 4
+  },
+  {
+    "at": "2026-11-16T08:33:15",
+    "kind": "received",
+    "thread_id": "tb0f38eac",
+    "thread_title": "四楼抖腿哥这波操作给我看乐了",
+    "body": "菜还没打完就抖腿了，饭都得抖一下",
+    "reply_to_nick": null,
+    "from": "食堂干饭王",
+    "importance": 4
+  },
+  {
+    "at": "2026-11-16T08:32:07",
     "kind": "comment",
-    "thread_id": "t13f654d0",
-    "thread_title": "图书馆这个失物艺术展 我们那边也搞过类似的",
-    "body": "草 这个展是挺乐的",
-    "reply_to_nick": null
+    "thread_id": "tb8aa96c2",
+    "thread_title": "四楼那个抖腿的贴条之后带海绵垫了",
+    "body": "海绵垫链接方便发个不",
+    "reply_to_nick": null,
+    "importance": 2
+  },
+  {
+    "at": "2026-11-16T08:33:26",
+    "kind": "received",
+    "thread_id": "tb8aa96c2",
+    "thread_title": "四楼那个抖腿的贴条之后带海绵垫了",
+    "body": "链接要真有人发我还真想看，凌晨背书坐着那马扎抖不得，我这叫抖腿续命，算不算学习辅助设备？",
+    "reply_to_nick": null,
+    "from": "上岸进行时",
+    "importance": 4
+  },
+  {
+    "at": "2026-11-16T08:31:25",
+    "kind": "thread",
+    "thread_id": "t4f8209e5",
+    "thread_title": "睡过头错过点名边缘的一次 记一笔",
+    "body": "今天差点成名人。室友提前十分钟喊我，我说嗯嗯再刷五分钟，结果刷到老师翻名单。冲进去那口气还没顺过来。现在坐床上想想还后怕，下次谁喊我起床我请谁吃食堂。",
+    "reply_to_nick": null,
+    "importance": 6
+  },
+  {
+    "at": "2026-11-16T08:32:13",
+    "kind": "received",
+    "thread_id": "t4f8209e5",
+    "thread_title": "睡过头错过点名边缘的一次 记一笔",
+    "body": "我当年室友喊都不喊，自己去上课了我还在睡",
+    "reply_to_nick": null,
+    "from": "延毕的老学长",
+    "importance": 4
+  },
+  {
+    "at": "2026-11-16T08:33:14",
+    "kind": "received",
+    "thread_id": "t4f8209e5",
+    "thread_title": "睡过头错过点名边缘的一次 记一笔",
+    "body": "室友几点喊的你",
+    "reply_to_nick": null,
+    "from": "勤工俭学的小周",
+    "importance": 4
+  },
+  {
+    "at": "2026-11-16T08:38:32",
+    "kind": "received",
+    "thread_id": "t4f8209e5",
+    "thread_title": "睡过头错过点名边缘的一次 记一笔",
+    "body": "十分钟就慌 我训练迟到半小时教练都懒得喊我",
+    "reply_to_nick": null,
+    "from": "体育生大壮",
+    "importance": 4
+  },
+  {
+    "at": "2026-11-16T08:40:44",
+    "kind": "comment",
+    "thread_id": "t4f8209e5",
+    "thread_title": "睡过头错过点名边缘的一次 记一笔",
+    "body": "我室友真喊十分钟 救我一条命 哈哈哈哈",
+    "reply_to_nick": null,
+    "importance": 2
+  },
+  {
+    "at": "2026-11-16T08:35:51",
+    "kind": "comment",
+    "thread_id": "t0a50a16c",
+    "thread_title": "八点金针菇就把丸子捞完了，这合理吗",
+    "body": "十点还有面？我上次八点零五连汤都没捞着",
+    "reply_to_nick": "延毕的老学长",
+    "importance": 3
   }
 ]

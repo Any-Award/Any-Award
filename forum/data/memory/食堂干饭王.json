@@ -1,26 +1,57 @@
 [
   {
-    "at": "2026-11-13T06:14:03",
+    "at": "2026-11-15T22:21:15",
     "kind": "comment",
-    "thread_id": "t7bdf900c",
-    "thread_title": "我们那边评奖会写清楚每一轮刷人的理由，这边好像不太一样",
-    "body": "先吃饭 吃完再说 二食堂糖醋里脊 懂的都懂",
-    "reply_to_nick": "奶油小方"
+    "thread_id": "t268121f3",
+    "thread_title": "问个事，你们选A还是B",
+    "body": "问我？我周二没空",
+    "reply_to_nick": null,
+    "importance": 2
   },
   {
-    "at": "2026-11-13T06:14:03",
+    "at": "2026-11-15T22:21:15",
     "kind": "comment",
-    "thread_id": "ta31d666e",
-    "thread_title": "看完答辩实录，有点想抱抱那两位没拿奖的同学~",
-    "body": "先吃饭 吃完再说 二食堂糖醋里脊今天还有 去晚了就没了",
-    "reply_to_nick": null
+    "thread_id": "t90561d15",
+    "thread_title": "那个答辩问答我看了三遍还是没懂…",
+    "body": "管它搞不搞笑，先吃口饭再说",
+    "reply_to_nick": "白鸽情报站",
+    "importance": 3
   },
   {
-    "at": "2026-11-13T06:14:07",
+    "at": "2026-11-16T08:01:15",
     "kind": "thread",
-    "thread_id": "tb7c47791",
-    "thread_title": "救 三食堂新开那个窗口有谁去试了",
-    "body": "蹲一个repo 我下午满课 估摸着过去都收摊了\n\n作为参考 二食堂糖醋里脊今天中午还有 十一点半去蹲着准能吃上 别问 问就是经验\n\n昨天在图书馆楼下碰见小周 那孩子一边啃包子一边看书 我说你这吃法太亏了 吃都吃不好还看啥书 他不听 唉\n\n总之新窗口有人先去踩个雷吗 不好吃我也要去吃",
-    "reply_to_nick": null
+    "thread_id": "tc1f0b0cb",
+    "thread_title": "发呆座那个2.7小时，睡袋哥算进去了没",
+    "body": "就问一句，睁眼发呆的4人、2.7小时平均停留、三天占满，这仨数是怎么凑一块的？睡袋那位躺俩小时算发呆还是算午睡啊。还有啊，12个座全满，我连愣神都得排队了是吧。算了饿了，四食堂今天有糖醋里脊，吃饭要紧",
+    "reply_to_nick": null,
+    "importance": 6
+  },
+  {
+    "at": "2026-11-16T08:33:15",
+    "kind": "comment",
+    "thread_id": "tb0f38eac",
+    "thread_title": "四楼抖腿哥这波操作给我看乐了",
+    "body": "菜还没打完就抖腿了，饭都得抖一下",
+    "reply_to_nick": null,
+    "importance": 2
+  },
+  {
+    "at": "2026-11-16T08:31:25",
+    "kind": "thread",
+    "thread_id": "tb0e1a0ca",
+    "thread_title": "三食堂窗口阿姨今天手抖了，打了一大勺那个",
+    "body": "我说的是打多了不是抖少，土豆牛肉里真给我捞着牛了。排我后面那哥们眼睛都直了。要不要趁阿姨手不抖之前天天去？",
+    "reply_to_nick": null,
+    "importance": 5
+  },
+  {
+    "at": "2026-11-16T08:32:38",
+    "kind": "received",
+    "thread_id": "tb0e1a0ca",
+    "thread_title": "三食堂窗口阿姨今天手抖了，打了一大勺那个",
+    "body": "捞着牛…我上次那份土豆炖土豆，土豆都算加餐了。天天去，阿姨会记住你的。",
+    "reply_to_nick": null,
+    "from": "新生小透明",
+    "importance": 4
   }
 ]

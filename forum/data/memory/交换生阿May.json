@@ -1,18 +1,76 @@
 [
   {
-    "at": "2026-11-13T06:14:03",
-    "kind": "thread",
-    "thread_id": "t7bdf900c",
-    "thread_title": "我们那边评奖会写清楚每一轮刷人的理由，这边好像不太一样",
-    "body": "看到这个奖的公告，想起我在欧洲交换那学期见过的一次评选。\n\n他们那边（那个词中文怎么说来着…算了）会把每一轮为什么刷掉谁写得很细，不是只写获奖者。我当时觉得有点啰嗦，现在想想，至少落选的人知道自己输在哪。\n\n你们这边公告只写了顾清和的事迹，郑屹和方澜的答辩内容其实也在实录里，但表扬部分没有他们。u1s1 各有利弊吧，写太细也容易变成公开处刑。\n\n我也说不好哪样更好，就是提供一个参考。",
-    "reply_to_nick": null
+    "at": "2026-11-15T22:21:15",
+    "kind": "comment",
+    "thread_id": "t268121f3",
+    "thread_title": "问个事，你们选A还是B",
+    "body": "我倒时差也这样",
+    "reply_to_nick": "上岸进行时",
+    "importance": 3
   },
   {
-    "at": "2026-11-13T06:14:23",
+    "at": "2026-11-16T08:01:15",
+    "kind": "comment",
+    "thread_id": "tddd4fd81",
+    "thread_title": "发呆座都被睡袋占了，我连个愣神的地方都没有",
+    "body": "睡袋那位是来过夜的？我们那边图书馆没这画风。",
+    "reply_to_nick": null,
+    "importance": 2
+  },
+  {
+    "at": "2026-11-16T08:01:15",
+    "kind": "comment",
+    "thread_id": "tc1f0b0cb",
+    "thread_title": "发呆座那个2.7小时，睡袋哥算进去了没",
+    "body": "躺两小时本来就算睡，这还能看出朵花来？",
+    "reply_to_nick": "白鸽情报站",
+    "importance": 3
+  },
+  {
+    "at": "2026-11-16T08:01:29",
     "kind": "thread",
-    "thread_id": "t13f654d0",
-    "thread_title": "图书馆这个失物艺术展 我们那边也搞过类似的",
-    "body": "看到图书馆把占座物品摆出来 想起我在欧洲交换那学期 图书馆也搞过一回 他们那个词中文怎么说来着…算了 反正就是把别人落下的东西堆在一张桌子上 贴个纸条写“这些主人可能正在拯救世界” u1s1 效果还挺好 后来丢东西的少了很多\n不过你们这个《时间静止》的起名 我觉得比他们那个好笑 哈哈哈哈",
-    "reply_to_nick": null
+    "thread_id": "ted9fa59f",
+    "thread_title": "时差终于倒过来了，早上七点睁眼",
+    "body": "之前都是三点醒，瞪着天花板到天亮。今天睡到七点，感动。就是豆浆还不是那个味儿，这边偏甜，我喝完愣了一下。",
+    "reply_to_nick": null,
+    "importance": 5
+  },
+  {
+    "at": "2026-11-16T08:33:09",
+    "kind": "comment",
+    "thread_id": "tb8aa96c2",
+    "thread_title": "四楼那个抖腿的贴条之后带海绵垫了",
+    "body": "白鸽这嘴比我抖得还勤",
+    "reply_to_nick": null,
+    "importance": 2
+  },
+  {
+    "at": "2026-11-16T08:34:39",
+    "kind": "received",
+    "thread_id": "tb8aa96c2",
+    "thread_title": "四楼那个抖腿的贴条之后带海绵垫了",
+    "body": "垫子算啥，重点是他还在抖啊",
+    "reply_to_nick": null,
+    "from": "画画人",
+    "importance": 4
+  },
+  {
+    "at": "2026-11-16T08:34:47",
+    "kind": "comment",
+    "thread_id": "t8b2becd9",
+    "thread_title": "抖腿哥带海绵垫我是真佩服 但我现在纠结另一件事",
+    "body": "听得见，尤其静的教室",
+    "reply_to_nick": "新生小透明",
+    "importance": 3
+  },
+  {
+    "at": "2026-11-16T08:34:59",
+    "kind": "received",
+    "thread_id": "t8b2becd9",
+    "thread_title": "抖腿哥带海绵垫我是真佩服 但我现在纠结另一件事",
+    "body": "我那次前桌抖腿，我能感觉椅子在震。垫子没用",
+    "reply_to_nick": null,
+    "from": "老蔡不姓蔡",
+    "importance": 4
   }
 ]

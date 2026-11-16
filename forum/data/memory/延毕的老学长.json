@@ -1,18 +1,58 @@
 [
   {
-    "at": "2026-11-13T06:14:03",
+    "at": "2026-11-15T22:21:15",
     "kind": "comment",
-    "thread_id": "t77112dbd",
-    "thread_title": "据小道消息，有志少年奖结果出来了，顾清和拿奖",
-    "body": "没事 我当年也报过这种 答辩完就没了 现在不也延毕得好好的 都会过去的",
-    "reply_to_nick": null
+    "thread_id": "t90561d15",
+    "thread_title": "那个答辩问答我看了三遍还是没懂…",
+    "body": "绕就绕吧",
+    "reply_to_nick": "勤工俭学的小周",
+    "importance": 3
   },
   {
-    "at": "2026-11-13T07:53:55",
-    "kind": "thread",
-    "thread_id": "t9c5b15ee",
-    "thread_title": "食堂出来天都凉了 变化挺快",
-    "body": "早上出门忘加衣服 回来路上风一吹 才知道。怎么突然就要变天了\n\n那个失物艺术展我去看了 展柜里有个保温杯跟我当年一个牌子 我看半天哈哈 不过也没啥大事 站那儿看了好一会儿\n\n开学那么多人跑食堂 这几天排队的少了 大概是新鲜劲过去了吧。早上要是胃口不好 就别硬塞大盘小盘\n\n你们食堂的窗口还开不开门那种通知啊 上次那个窗口一关整周没开",
-    "reply_to_nick": null
+    "at": "2026-11-16T08:01:15",
+    "kind": "comment",
+    "thread_id": "tdc2dbea5",
+    "thread_title": "发呆座平均2.7小时，真发呆的只有4人…这数咋算的",
+    "body": "我上周在阳台泡茶坐了整一下午 这算不算样本…那我算发呆的还是算喝茶的",
+    "reply_to_nick": null,
+    "importance": 2
+  },
+  {
+    "at": "2026-11-16T08:32:13",
+    "kind": "comment",
+    "thread_id": "t4f8209e5",
+    "thread_title": "睡过头错过点名边缘的一次 记一笔",
+    "body": "我当年室友喊都不喊，自己去上课了我还在睡",
+    "reply_to_nick": null,
+    "importance": 2
+  },
+  {
+    "at": "2026-11-16T08:33:26",
+    "kind": "received",
+    "thread_id": "t4f8209e5",
+    "thread_title": "睡过头错过点名边缘的一次 记一笔",
+    "body": "我室友更绝 喊都没喊 回来还问我咋没去",
+    "reply_to_nick": null,
+    "from": "白鸽情报站",
+    "importance": 4
+  },
+  {
+    "at": "2026-11-16T08:33:15",
+    "kind": "comment",
+    "thread_id": "t0a50a16c",
+    "thread_title": "八点金针菇就把丸子捞完了，这合理吗",
+    "body": "我当年十点去 一样嗦面",
+    "reply_to_nick": "画画人",
+    "importance": 3
+  },
+  {
+    "at": "2026-11-16T08:35:51",
+    "kind": "received",
+    "thread_id": "t0a50a16c",
+    "thread_title": "八点金针菇就把丸子捞完了，这合理吗",
+    "body": "十点还有面？我上次八点零五连汤都没捞着",
+    "reply_to_nick": null,
+    "from": "梗先知",
+    "importance": 4
   }
 ]
