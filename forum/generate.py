@@ -25,7 +25,7 @@ from openai import OpenAI
 
 from render import render
 import memory
-from lexicon import BANNED_COOC, BANNED_FRAMES, BANNED_WORDS, COMPILED_FRAMES, banned_prompt_line
+from lexicon import BANNED_COOC, BANNED_WORDS, COMPILED_FRAMES, banned_prompt_line
 import relations
 
 HERE = Path(__file__).resolve().parent
@@ -574,7 +574,8 @@ def generate_comments(client, model, personas, rules, thread, temperature) -> di
         mem_block = memory.footprints([p["nickname"]], k=3, width=50)
         try:
             r = generate_one_comment(client, model, p, rules, situation, motive, mem_block, temperature, about=about)
-        except (json.JSONDecodeError, KeyError):
+        except (json.JSONDecodeError, KeyError) as exc:
+            print(f"警告：{p['nickname']} 评论生成失败丢弃：{exc}", file=sys.stderr)
             continue
         if r.get("skip"):
             continue
@@ -603,8 +604,9 @@ def generate_replies_to_comment(client, model, personas, rules, thread, target_c
         motive = random.choice(_MOTIVES)
         mem_block = memory.footprints([p["nickname"]], k=3, width=50)
         try:
-            r = generate_one_comment(client, model, p, rules, situation, motive, mem_block, temperature)
-        except (json.JSONDecodeError, KeyError):
+            r = generate_one_comment(client, model, p, rules, situation, motive, mem_block, temperature, about=player_nick)
+        except (json.JSONDecodeError, KeyError) as exc:
+            print(f"警告：{p['nickname']} 回应玩家评论生成失败丢弃：{exc}", file=sys.stderr)
             continue
         if r.get("skip"):
             continue

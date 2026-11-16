@@ -133,6 +133,12 @@ def hint_line(nick: str, other: str) -> str:
     """注入 prompt 的单行关系提示;无边或对方是自己时返回空串。"""
     if not other or other == nick:
         return ""
+    try:
+        known = {p["nickname"] for p in json.loads(PERSONAS_PATH.read_text(encoding="utf-8"))["personas"]}
+    except (OSError, json.JSONDecodeError, KeyError):
+        known = set()
+    if other not in known:
+        return ""   # 玩家/未知昵称: 不注入关系行(防玩家路径每条回复都刷「不熟」噪音)
     e = get(nick, other)
     if e is None:
         return f"（你和{other}不熟, 就是普通同学）"
