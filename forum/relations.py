@@ -139,7 +139,7 @@ def hint_line(nick: str, other: str) -> str:
     name, hint = stage_of(e["strength"])
     kind = e.get("kind") or "同学"
     note = f",最近: {e['last_note']}" if e.get("last_note") else ""
-    return f"（你和{other}: {kind}, 关系{name}({e['strength']}/100)——{hint}{note}）"
+    return f"（你和{other}: {kind}, 关系{name}——{hint}{note}）"
 
 
 def weight(nick: str, other: str) -> float:

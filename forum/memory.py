@@ -148,6 +148,14 @@ def _is_interaction(item: dict) -> bool:
     return bool(item.get("reply_to_nick") or item.get("from") or item.get("kind") == "received")
 
 
+def has_interaction(nick: str, other: str) -> bool:
+    """nick 的记忆里是否有与 other 的互动（我回过 TA / TA 对我说过）。"""
+    if not other or other == nick:
+        return False
+    return any(it.get("reply_to_nick") == other or it.get("from") == other
+               for it in recent(nick, KEEP))
+
+
 def retrieve(nick: str, k: int = 5, query: str | None = None) -> list[dict]:
     """加权检索（Stanford retrieve 的 recency + importance 两信号 + 互动奖励）。
 

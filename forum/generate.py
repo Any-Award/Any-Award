@@ -317,9 +317,10 @@ def _rework(client, model, system: str, user: str, first: dict,
     return second if str(second.get("body", "")).strip() else first
 
 
-def generate_one_comment(client, model, persona, rules, situation, motive, mem_block, temperature, budget=None) -> dict:
+def generate_one_comment(client, model, persona, rules, situation, motive, mem_block, temperature, budget=None, about=None) -> dict:
     """单角色单调用：只喂该角色的情境 + 自己的记忆，打破"一个编剧写群戏"。
-    映射斯坦福 v2 一次一句 + 情境模板 + 信息不对称。"""
+    映射斯坦福 v2 一次一句 + 情境模板 + 信息不对称。
+    about = 本条互动对象（楼主或被接的评论者），用于注入关系提示与「记得上次」。"""
     if budget is None:
         budget = _length_budget()
     system = (
@@ -329,6 +330,9 @@ def generate_one_comment(client, model, persona, rules, situation, motive, mem_b
     user = (
         f"【你刚看到的】{situation}\n\n"
         f"【你此刻的动机】{motive}\n\n"
+        + (relations.hint_line(persona["nickname"], about) + "\n\n" if about else "")
+        + (f"【旧账】你和{about}之前在帖子里交过手/搭过话——可以自然提一句上次的事，或接着那个话头，别装初见。\n\n"
+           if about and memory.has_interaction(persona["nickname"], about) else "")
         + (f"【你自己的近期记忆】{mem_block}\n\n" if mem_block else "")
         + (
             "【钩子】先在 point 字段填对方这句话里你唯一想接的那个词/数字/事实（不超过10字，"
@@ -551,17 +555,25 @@ def generate_comments(client, model, personas, rules, thread, temperature) -> di
     for i, p in enumerate(responders):
         go_lou = (i >= 2) and bool(comments) and random.random() < 0.55
         if go_lou:
-            target = random.choice(comments[-4:])
+            targets = comments[-4:]
+            # 目标按关系强度加权——旧版只加权"谁被抽来",最后一步均匀随机,
+            # 关系对同框率的提升实测只剩 1.08-1.33 倍 ≈ 随机
+            weights = [relations.weight(p["nickname"], t.get("nickname", "")) for t in targets]
+            target = random.choices(targets, weights=weights, k=1)[0]
             situation = (f"帖子《{thread.get('title', '')}》（楼主说：{str(thread.get('body', ''))[:80]}）的评论区。\n"
                          f"你刚看到 {target['nickname']} 说：「{target['body']}」")
             motive = random.choice(_REPLY_MOTIVES)
             forced_reply = target["nickname"]
+            about = target["nickname"]
         else:
-            situation, motive = comment_situation(thread, [])  # 只看帖子，独立反应
+            # 顶楼视野: 本批已发评论优先, 否则帖内既有评论(玩家互动场景)——修盲选
+            prior = comments or thread.get("comments") or []
+            situation, motive = comment_situation(thread, prior[-2:])
             forced_reply = None
+            about = thread.get("nickname", "")
         mem_block = memory.footprints([p["nickname"]], k=3, width=50)
         try:
-            r = generate_one_comment(client, model, p, rules, situation, motive, mem_block, temperature)
+            r = generate_one_comment(client, model, p, rules, situation, motive, mem_block, temperature, about=about)
         except (json.JSONDecodeError, KeyError):
             continue
         if r.get("skip"):
